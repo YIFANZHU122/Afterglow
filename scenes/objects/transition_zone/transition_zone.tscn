@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/objects/transition_zone/transition_zone.gd" id="1_tz_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tz"]
+size = Vector2(100, 100)
+
+[node name="TransitionZone" type="Area2D"]
+script = ExtResource("1_tz_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_tz")
+
+[node name="Visual" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-50, -50, 50, -50, 50, 50, -50, 50)
+color = Color(1, 0.78, 0.2, 0.25)
