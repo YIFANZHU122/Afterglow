@@ -20,6 +20,9 @@ signal stamina_changed(current: float, max_value: float)
 # 体力回复速率（每秒）
 @export var stamina_regen_rate: float = 15.0
 
+# 场景注入的基础武器，保证玩家进入演示关卡后即可战斗。
+@export var default_weapon: ItemData
+
 const STAMINA_MODEL_SCRIPT: Script = preload("res://scripts/player/stamina_model.gd")
 const PLAYER_INPUT_ADAPTER_SCRIPT: Script = preload("res://scripts/player/player_input_adapter.gd")
 const MELEE_ATTACK_MODEL_SCRIPT: Script = preload("res://scripts/combat/melee_attack_model.gd")
@@ -40,6 +43,9 @@ var _facing_direction: Vector2 = Vector2.DOWN
 @onready var health_bar: ProgressBar = $HUD/HealthBar
 @onready var attack_area: AttackArea = $AttackArea
 @onready var revive_button: Button = $HUD/ReviveButton
+@onready var presenter: Variant = get_node_or_null("Presenter")
+
+var _missing_presenter_warned: bool = false
 
 
 func _ready() -> void:
@@ -60,12 +66,6 @@ func _ready() -> void:
 	# 复活按钮
 	revive_button.pressed.connect(_on_revive_pressed)
 
-	# 初始朝下站立（定格在 down 动画中间帧）
-	sprite.animation = &"down"
-	sprite.frame = 1
-	sprite.stop()
-
-
 func _physics_process(delta: float) -> void:
 	if _revive_model.is_dead():
 		return
@@ -83,31 +83,15 @@ func _update_stamina(delta: float, command: PlayerCommand) -> void:
 
 func _handle_movement(direction: Vector2) -> void:
 	velocity = direction * _get_current_speed()
-	_update_animation(direction)
+	if direction != Vector2.ZERO:
+		_facing_direction = direction
+	_present_movement(direction)
 	move_and_slide()
 
 
-## 根据移动方向切换行走动画；停止时定格在当前方向的中间帧（站立姿势）
-func _update_animation(direction: Vector2) -> void:
-	if direction == Vector2.ZERO:
-		sprite.stop()
-		sprite.frame = 1
-		return
-
-	_facing_direction = direction
-
-	var anim_name: StringName
-	if absf(direction.x) > absf(direction.y):
-		anim_name = &"right" if direction.x > 0.0 else &"left"
-	else:
-		anim_name = &"down" if direction.y > 0.0 else &"up"
-
-	if sprite.animation != anim_name or not sprite.is_playing():
-		sprite.play(anim_name)
-
-
 func _get_current_speed() -> float:
-	return walk_speed * _stamina_model.get_speed_multiplier(run_speed_multiplier, exhausted_speed_multiplier)
+	return walk_speed * _stamina_model.get_speed_multiplier(run_speed_multiplier, exhausted_speed_multiplier) \
+		* GameManager.get_run_move_speed_multiplier()
 
 
 func _on_stamina_changed(current: float, _max_value: float) -> void:
@@ -136,23 +120,12 @@ func _handle_attack_input(command: PlayerCommand) -> void:
 	if not command.attack_pressed:
 		return
 	var selected: ItemData = Inventory.get_selected_item()
+	if selected == null:
+		selected = default_weapon
 	if not _melee_attack_model.can_attack(selected):
 		return
-	attack_area.start_attack(_melee_attack_model.get_damage(selected))
-	_play_attack_animation()
-
-
-## 攻击动画：朝当前朝向轻微前冲 + 闪白（无攻击帧图时的视觉反馈）
-func _play_attack_animation() -> void:
-	# 闪白
-	sprite.modulate = Color(2.0, 2.0, 2.0)
-	var white_tween := create_tween()
-	white_tween.tween_property(sprite, "modulate", Color.WHITE, 0.15)
-
-	# 朝朝向方向轻微前冲（挥砍位移感）
-	var target_pos: Vector2 = global_position + _facing_direction.normalized() * 22.0
-	var dash_tween := create_tween()
-	dash_tween.tween_property(self, "global_position", target_pos, 0.12)
+	attack_area.start_attack(_melee_attack_model.get_damage(selected) * GameManager.get_run_damage_multiplier())
+	_present_attack(_facing_direction)
 
 
 func _on_health_changed(current: float, max_value: float) -> void:
@@ -164,12 +137,14 @@ func _on_health_changed(current: float, max_value: float) -> void:
 func _on_player_died() -> void:
 	if not _revive_model.mark_dead():
 		return
+	GameManager.mark_dead()
 	# 掉落所有物品到当前位置
 	var items := Inventory.drop_all()
 	for item in items:
 		_item_drop_service.spawn_item(get_tree().current_scene, item, global_position)
 	# 隐藏 + 禁用碰撞
 	sprite.visible = false
+	_present_dead(true)
 	collision_layer = 0
 	collision_mask = 0
 	# 显示复活按钮
@@ -188,8 +163,10 @@ func _on_revive_pressed() -> void:
 func _revive() -> void:
 	if not _revive_model.complete():
 		return
+	GameManager.revive()
 	health.reset()
 	sprite.visible = true
+	_present_dead(false)
 	collision_layer = 1
 	collision_mask = 3
 	global_position = _get_spawn_point()
@@ -204,3 +181,31 @@ func _get_spawn_point() -> Vector2:
 	if spawn != null:
 		return spawn.global_position
 	return global_position
+
+
+func _present_movement(direction: Vector2) -> void:
+	if presenter == null:
+		_warn_missing_presenter()
+		return
+	presenter.set_movement(direction)
+
+
+func _present_attack(direction: Vector2) -> void:
+	if presenter == null:
+		_warn_missing_presenter()
+		return
+	presenter.play_attack(direction)
+
+
+func _present_dead(dead: bool) -> void:
+	if presenter == null:
+		_warn_missing_presenter()
+		return
+	presenter.set_dead(dead)
+
+
+func _warn_missing_presenter() -> void:
+	if _missing_presenter_warned:
+		return
+	_missing_presenter_warned = true
+	push_warning("[Player] Presenter is missing; gameplay continues without presentation feedback")

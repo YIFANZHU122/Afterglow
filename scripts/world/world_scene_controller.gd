@@ -7,8 +7,16 @@ const WALL_THICKNESS: float = 40.0
 
 
 func _ready() -> void:
+	_start_initial_run_if_needed()
 	_place_player_at_spawn()
 	_setup_camera_limits()
+
+
+func _start_initial_run_if_needed() -> void:
+	if GameManager.is_run_idle():
+		GameManager.start_run()
+	if GameManager.is_preparing_floor():
+		GameManager.prepare_floor()
 
 
 func _get_world_size() -> Vector2:

@@ -9,6 +9,8 @@ extends Area2D
 # 目标场景中的出生点节点名称
 @export var spawn_point_name: String = "PlayerSpawn"
 
+@export var requires_objective_complete: bool = false
+
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -17,5 +19,10 @@ func _ready() -> void:
 func _on_body_entered(body: Node) -> void:
 	if not GameManager.can_transition():
 		return
+	if requires_objective_complete and not GameManager.is_floor_clear():
+		return
 	if body.is_in_group("player"):
+		if requires_objective_complete:
+			if not GameManager.start_next_floor():
+				return
 		GameManager.change_scene(target_scene, spawn_point_name)

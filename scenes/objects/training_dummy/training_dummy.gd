@@ -1,4 +1,5 @@
 extends StaticBody2D
+class_name TrainingDummy
 
 ## 训练人偶：100 血，死亡后 1 秒刷新；每 5 秒检查角色是否在攻击距离内并发射子弹
 

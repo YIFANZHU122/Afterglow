@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/objects/training_dummy/training_dummy.gd" id="1_dummy_script"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_hc_script"]
 [ext_resource type="PackedScene" path="res://scenes/objects/bullet/bullet.tscn" id="3_bullet_scene"]
+[ext_resource type="Script" path="res://scripts/combat/encounter_member.gd" id="4_encounter_member"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dummy"]
 size = Vector2(40, 60)
@@ -37,6 +38,10 @@ shape = SubResource("RectangleShape2D_dummy")
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_hc_script")
 max_health = 100.0
+
+[node name="EncounterMember" type="Node" parent="."]
+script = ExtResource("4_encounter_member")
+reward_xp = 40
 
 [node name="HealthBar" type="ProgressBar" parent="."]
 offset_left = -25.0
