@@ -20,19 +20,17 @@ signal stamina_changed(current: float, max_value: float)
 # 体力回复速率（每秒）
 @export var stamina_regen_rate: float = 15.0
 
-# 进入奔跑所需的最低体力比例（1/4），也是疲劳恢复的阈值
-const RUN_STAMINA_RATIO: float = 0.25
-const ITEM_WORLD_SCENE: PackedScene = preload("res://scenes/objects/item_world/item_world.tscn")
+const STAMINA_MODEL_SCRIPT: Script = preload("res://scripts/player/stamina_model.gd")
+const PLAYER_INPUT_ADAPTER_SCRIPT: Script = preload("res://scripts/player/player_input_adapter.gd")
+const MELEE_ATTACK_MODEL_SCRIPT: Script = preload("res://scripts/combat/melee_attack_model.gd")
+const REVIVE_MODEL_SCRIPT: Script = preload("res://scripts/progression/revive_model.gd")
+const ITEM_DROP_SERVICE_SCRIPT: Script = preload("res://scripts/items/item_drop_service.gd")
 
-enum MoveState {
-	WALKING,
-	RUNNING,
-	EXHAUSTED,
-}
-
-var _stamina: float = 0.0
-var _move_state: MoveState = MoveState.WALKING
-var _is_dead: bool = false
+var _stamina_model: StaminaModel
+var _input_adapter: PlayerInputAdapter
+var _melee_attack_model: MeleeAttackModel
+var _revive_model: ReviveModel
+var _item_drop_service: ItemDropService
 # 当前朝向（用于攻击动画方向），默认朝下
 var _facing_direction: Vector2 = Vector2.DOWN
 
@@ -45,10 +43,14 @@ var _facing_direction: Vector2 = Vector2.DOWN
 
 
 func _ready() -> void:
-	_stamina = max_stamina
+	_stamina_model = STAMINA_MODEL_SCRIPT.new(max_stamina, stamina_drain_rate, stamina_regen_rate)
+	_input_adapter = PLAYER_INPUT_ADAPTER_SCRIPT.new()
+	_melee_attack_model = MELEE_ATTACK_MODEL_SCRIPT.new()
+	_revive_model = REVIVE_MODEL_SCRIPT.new()
+	_item_drop_service = ITEM_DROP_SERVICE_SCRIPT.new()
 	stamina_bar.max_value = max_stamina
 	stamina_changed.connect(_on_stamina_changed)
-	_on_stamina_changed(_stamina, max_stamina)
+	_on_stamina_changed(_stamina_model.get_stamina(), _stamina_model.get_max_stamina())
 
 	# 血量初始化
 	health.health_changed.connect(_on_health_changed)
@@ -65,42 +67,18 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if _is_dead:
+	if _revive_model.is_dead():
 		return
-	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	_update_stamina(delta, direction)
-	_handle_movement(direction)
-	_handle_inventory_input()
-	_handle_attack_input()
+	var command: PlayerCommand = _input_adapter.collect_command()
+	_update_stamina(delta, command)
+	_handle_movement(command.move_direction)
+	_handle_inventory_input(command)
+	_handle_attack_input(command)
 
 
-func _update_stamina(delta: float, direction: Vector2) -> void:
-	var sprinting := Input.is_action_pressed("sprint")
-	var is_moving := direction != Vector2.ZERO
-
-	match _move_state:
-		MoveState.WALKING:
-			_stamina = minf(_stamina + stamina_regen_rate * delta, max_stamina)
-			if sprinting and is_moving and _stamina >= max_stamina * RUN_STAMINA_RATIO:
-				_set_state(MoveState.RUNNING)
-
-		MoveState.RUNNING:
-			_stamina = maxf(_stamina - stamina_drain_rate * delta, 0.0)
-			if _stamina <= 0.0:
-				_set_state(MoveState.EXHAUSTED)
-			elif not sprinting or not is_moving:
-				_set_state(MoveState.WALKING)
-
-		MoveState.EXHAUSTED:
-			_stamina = minf(_stamina + stamina_regen_rate * delta, max_stamina)
-			if _stamina >= max_stamina * RUN_STAMINA_RATIO:
-				_set_state(MoveState.WALKING)
-
-	stamina_changed.emit(_stamina, max_stamina)
-
-
-func _set_state(new_state: MoveState) -> void:
-	_move_state = new_state
+func _update_stamina(delta: float, command: PlayerCommand) -> void:
+	_stamina_model.tick(delta, command.move_direction, command.sprint_requested)
+	stamina_changed.emit(_stamina_model.get_stamina(), _stamina_model.get_max_stamina())
 
 
 func _handle_movement(direction: Vector2) -> void:
@@ -129,13 +107,7 @@ func _update_animation(direction: Vector2) -> void:
 
 
 func _get_current_speed() -> float:
-	match _move_state:
-		MoveState.RUNNING:
-			return walk_speed * run_speed_multiplier
-		MoveState.EXHAUSTED:
-			return walk_speed * exhausted_speed_multiplier
-		_:
-			return walk_speed
+	return walk_speed * _stamina_model.get_speed_multiplier(run_speed_multiplier, exhausted_speed_multiplier)
 
 
 func _on_stamina_changed(current: float, _max_value: float) -> void:
@@ -143,15 +115,12 @@ func _on_stamina_changed(current: float, _max_value: float) -> void:
 
 
 ## 物品栏切换：滚轮 + 数字键 1~5 + Q 丢弃选中物品
-func _handle_inventory_input() -> void:
-	if Input.is_action_just_pressed("cycle_prev"):
-		Inventory.cycle_selected(-1)
-	if Input.is_action_just_pressed("cycle_next"):
-		Inventory.cycle_selected(1)
-	for i in range(Inventory.SLOT_COUNT):
-		if Input.is_action_just_pressed("slot_%d" % (i + 1)):
-			Inventory.set_selected_slot(i)
-	if Input.is_action_just_pressed("drop"):
+func _handle_inventory_input(command: PlayerCommand) -> void:
+	if command.cycle_delta != 0:
+		Inventory.cycle_selected(command.cycle_delta)
+	if command.selected_slot != PlayerCommand.NO_SELECTED_SLOT:
+		Inventory.set_selected_slot(command.selected_slot)
+	if command.drop_pressed:
 		_drop_selected_item()
 
 
@@ -159,27 +128,17 @@ func _drop_selected_item() -> void:
 	var item := Inventory.drop_selected()
 	if item == null:
 		return
-	_spawn_item_world(item, global_position)
-
-
-## 在指定位置生成世界物品
-func _spawn_item_world(item: ItemData, pos: Vector2) -> void:
-	var item_world: ItemWorld = ITEM_WORLD_SCENE.instantiate() as ItemWorld
-	item_world.item_data = item
-	get_tree().current_scene.add_child(item_world)
-	item_world.global_position = pos
+	_item_drop_service.spawn_item(get_tree().current_scene, item, global_position)
 
 
 ## 攻击：鼠标左键 + 当前选中物品是剑 → 近战判定
-func _handle_attack_input() -> void:
-	if not Input.is_action_just_pressed("attack"):
+func _handle_attack_input(command: PlayerCommand) -> void:
+	if not command.attack_pressed:
 		return
 	var selected: ItemData = Inventory.get_selected_item()
-	if selected == null:
+	if not _melee_attack_model.can_attack(selected):
 		return
-	if selected.item_type != ItemData.ItemType.SWORD:
-		return
-	attack_area.start_attack(selected.attack_damage)
+	attack_area.start_attack(_melee_attack_model.get_damage(selected))
 	_play_attack_animation()
 
 
@@ -203,11 +162,12 @@ func _on_health_changed(current: float, max_value: float) -> void:
 
 ## 玩家死亡：掉落所有物品 + 隐藏 + 显示复活按钮
 func _on_player_died() -> void:
-	_is_dead = true
+	if not _revive_model.mark_dead():
+		return
 	# 掉落所有物品到当前位置
 	var items := Inventory.drop_all()
 	for item in items:
-		_spawn_item_world(item, global_position)
+		_item_drop_service.spawn_item(get_tree().current_scene, item, global_position)
 	# 隐藏 + 禁用碰撞
 	sprite.visible = false
 	collision_layer = 0
@@ -217,6 +177,8 @@ func _on_player_died() -> void:
 
 
 func _on_revive_pressed() -> void:
+	if not _revive_model.request():
+		return
 	revive_button.disabled = true
 	revive_button.text = "复活中... 5s"
 	await get_tree().create_timer(5.0).timeout
@@ -224,8 +186,9 @@ func _on_revive_pressed() -> void:
 
 
 func _revive() -> void:
+	if not _revive_model.complete():
+		return
 	health.reset()
-	_is_dead = false
 	sprite.visible = true
 	collision_layer = 1
 	collision_mask = 3

@@ -1,6 +1,8 @@
 extends Area2D
 class_name ItemWorld
 
+const INTERACTION_INPUT_ADAPTER_SCRIPT: Script = preload("res://scripts/presentation/interaction_input_adapter.gd")
+
 ## 世界中可拾取的物品
 ## 玩家进入触发区域后按 E 键拾取，加入 Inventory 后自身销毁
 
@@ -10,9 +12,11 @@ class_name ItemWorld
 @onready var sprite: Sprite2D = $Sprite2D
 
 var _player_nearby: bool = false
+var _interaction_input_adapter: InteractionInputAdapter
 
 
 func _ready() -> void:
+	_interaction_input_adapter = INTERACTION_INPUT_ADAPTER_SCRIPT.new()
 	# 用 item_data.icon 设置视觉
 	if item_data != null and item_data.icon != null:
 		sprite.texture = item_data.icon
@@ -32,7 +36,7 @@ func _on_body_exited(body: Node) -> void:
 
 
 func _process(_delta: float) -> void:
-	if _player_nearby and Input.is_action_just_pressed("interact"):
+	if _player_nearby and _interaction_input_adapter.is_interact_pressed():
 		_try_pickup()
 
 

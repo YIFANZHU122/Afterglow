@@ -1,6 +1,8 @@
 extends Node
 class_name HealthComponent
 
+const HEALTH_MODEL_SCRIPT: Script = preload("res://scripts/combat/health_model.gd")
+
 ## 可复用血量组件
 ## 角色、敌人、人偶等一切有生命值的实体都可挂载本节点，通过信号驱动 UI 和逻辑
 
@@ -13,42 +15,53 @@ signal died
 
 @export var max_health: float = 100.0
 
-var _current_health: float = 0.0
-var _is_dead: bool = false
+var _model: HealthModel
 
 
 func _ready() -> void:
-	_current_health = max_health
+	_model = HEALTH_MODEL_SCRIPT.new(max_health)
 
 
 ## 受到伤害；已死亡时忽略
 func take_damage(amount: float) -> void:
-	if _is_dead:
+	if _model == null:
 		return
-	_current_health = maxf(_current_health - amount, 0.0)
-	damaged.emit(amount)
-	health_changed.emit(_current_health, max_health)
-	if _current_health <= 0.0:
-		_is_dead = true
+	var previous_health: float = _model.get_health()
+	var was_dead: bool = _model.is_dead()
+	_model.take_damage(amount)
+	var current_health: float = _model.get_health()
+	var is_dead_now: bool = _model.is_dead()
+	if current_health == previous_health and is_dead_now == was_dead:
+		return
+	if current_health != previous_health:
+		damaged.emit(amount)
+		health_changed.emit(current_health, _model.get_max_health())
+	if not was_dead and is_dead_now:
 		died.emit()
 
 
 ## 恢复血量
 func heal(amount: float) -> void:
-	_current_health = minf(_current_health + amount, max_health)
-	health_changed.emit(_current_health, max_health)
+	if _model == null:
+		return
+	var previous_health: float = _model.get_health()
+	_model.heal(amount)
+	var current_health: float = _model.get_health()
+	if current_health != previous_health:
+		health_changed.emit(current_health, _model.get_max_health())
 
 
 ## 重置为满血（复活/刷新用）
 func reset() -> void:
-	_is_dead = false
-	_current_health = max_health
-	health_changed.emit(_current_health, max_health)
+	if _model == null:
+		return
+	_model.reset()
+	health_changed.emit(_model.get_health(), _model.get_max_health())
 
 
 func is_dead() -> bool:
-	return _is_dead
+	return _model != null and _model.is_dead()
 
 
 func get_health() -> float:
-	return _current_health
+	return _model.get_health() if _model != null else 0.0
