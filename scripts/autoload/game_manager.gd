@@ -27,6 +27,7 @@ func change_scene(scene_path: String, spawn_name: String = "PlayerSpawn") -> voi
 		return
 	_transition_cooldown = COOLDOWN_TIME
 	spawn_point_name = spawn_name
+	TimeManager.save_state()
 	get_tree().change_scene_to_file(scene_path)
 
 
