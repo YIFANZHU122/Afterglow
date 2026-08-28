@@ -37,34 +37,67 @@ var _item_drop_service: ItemDropService
 # 当前朝向（用于攻击动画方向），默认朝下
 var _facing_direction: Vector2 = Vector2.DOWN
 
-@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var stamina_bar: ProgressBar = $HUD/StaminaBar
 @onready var health: HealthComponent = $HealthComponent
 @onready var health_bar: ProgressBar = $HUD/HealthBar
 @onready var attack_area: AttackArea = $AttackArea
+@onready var camera: Camera2D = $Camera2D
 @onready var revive_button: Button = $HUD/ReviveButton
+@onready var survival_status: Label = $HUD/StatusStack/SurvivalStatus
+@onready var buff_status: Label = $HUD/StatusStack/BuffStatus
 @onready var presenter: Variant = get_node_or_null("Presenter")
 
 var _missing_presenter_warned: bool = false
 
 
 func _ready() -> void:
-	_stamina_model = STAMINA_MODEL_SCRIPT.new(max_stamina, stamina_drain_rate, stamina_regen_rate)
+	_configure_camera()
+	var effective_max_stamina: float = max_stamina * GameManager.get_run_max_stamina_multiplier()
+	var effective_regen_rate: float = stamina_regen_rate * GameManager.get_run_stamina_regen_multiplier()
+	_stamina_model = STAMINA_MODEL_SCRIPT.new(effective_max_stamina, stamina_drain_rate, effective_regen_rate)
 	_input_adapter = PLAYER_INPUT_ADAPTER_SCRIPT.new()
 	_melee_attack_model = MELEE_ATTACK_MODEL_SCRIPT.new()
 	_revive_model = REVIVE_MODEL_SCRIPT.new()
 	_item_drop_service = ITEM_DROP_SERVICE_SCRIPT.new()
-	stamina_bar.max_value = max_stamina
+	stamina_bar.max_value = effective_max_stamina
 	stamina_changed.connect(_on_stamina_changed)
 	_on_stamina_changed(_stamina_model.get_stamina(), _stamina_model.get_max_stamina())
 
 	# 血量初始化
+	health.apply_max_health_multiplier(GameManager.get_run_max_health_multiplier())
+	health.set_damage_taken_multiplier(1.0 - GameManager.get_run_damage_reduction())
 	health.health_changed.connect(_on_health_changed)
+	health.damaged.connect(_on_player_damaged)
 	health.died.connect(_on_player_died)
 	_on_health_changed(health.get_health(), health.max_health)
 
 	# 复活按钮
 	revive_button.pressed.connect(_on_revive_pressed)
+	GameManager.survival_changed.connect(_on_survival_changed)
+	GameManager.run_build_changed.connect(_on_run_build_changed)
+	_update_buff_status()
+	GameManager.survival_environment_damage.connect(_on_survival_environment_damage)
+	_on_survival_changed(
+		GameManager.get_hunger(),
+		GameManager.get_water(),
+		GameManager.get_floor_elapsed_seconds(),
+		GameManager.get_floor_day_index(),
+		GameManager.is_floor_night(),
+		GameManager.get_overtime_stage(),
+		GameManager.get_disaster_probability()
+	)
+
+
+func _configure_camera() -> void:
+	if camera == null:
+		push_warning("[Player] Camera2D is missing; player movement will continue without a camera")
+		return
+	# Keep the player centered while the world controller clamps the view at map edges.
+	camera.enabled = true
+	camera.position_smoothing_enabled = false
+	camera.drag_horizontal_enabled = false
+	camera.drag_vertical_enabled = false
+	camera.make_current()
 
 func _physics_process(delta: float) -> void:
 	if _revive_model.is_dead():
@@ -133,6 +166,65 @@ func _on_health_changed(current: float, max_value: float) -> void:
 	health_bar.max_value = max_value
 
 
+func _on_player_damaged(_amount: float) -> void:
+	_present_hit()
+
+
+func _on_survival_environment_damage(damage_ratio: float) -> void:
+	if damage_ratio <= 0.0 or health == null or health.is_dead():
+		return
+	health.take_damage(health.max_health * damage_ratio)
+
+
+func _on_survival_changed(
+	hunger: float,
+	water: float,
+	elapsed_seconds: float,
+	day_index: int,
+	is_night: bool,
+	overtime_stage: int,
+	disaster_probability: float
+) -> void:
+	if survival_status == null:
+		return
+	var phase_name: String = "夜晚" if is_night else "白天"
+	var risk_name: String = _get_disaster_risk_name(disaster_probability)
+	var overtime_text: String = "  超时 %d" % overtime_stage if overtime_stage > 0 else ""
+	survival_status.text = "饥饿 %d  水分 %d\n第 %d 天  %s  %s%s" % [
+		int(floor(hunger)),
+		int(floor(water)),
+		day_index,
+		phase_name,
+		risk_name,
+		overtime_text,
+	]
+	survival_status.tooltip_text = "本图已停留 %d 秒；灾难概率不显示精确数值。" % int(floor(elapsed_seconds))
+
+
+func _on_run_build_changed(_damage_multiplier: float, _move_speed_multiplier: float) -> void:
+	_update_buff_status()
+
+
+func _update_buff_status() -> void:
+	if buff_status == null:
+		return
+	var parts: Array[String] = []
+	for item: Dictionary in GameManager.get_run_buff_summary():
+		parts.append("%s +%d" % [String(item.get("id", "")), int(item.get("stack", 0))])
+	var summary := "、".join(parts) if not parts.is_empty() else "暂无"
+	buff_status.text = "Buff  %s\n幸运 %.2f" % [summary, GameManager.get_run_luck()]
+
+
+func _get_disaster_risk_name(disaster_probability: float) -> String:
+	if disaster_probability >= 0.60:
+		return "灾变临界"
+	if disaster_probability >= 0.35:
+		return "危险"
+	if disaster_probability >= 0.15:
+		return "警戒"
+	return "平稳"
+
+
 ## 玩家死亡：掉落所有物品 + 隐藏 + 显示复活按钮
 func _on_player_died() -> void:
 	if not _revive_model.mark_dead():
@@ -142,8 +234,7 @@ func _on_player_died() -> void:
 	var items := Inventory.drop_all()
 	for item in items:
 		_item_drop_service.spawn_item(get_tree().current_scene, item, global_position)
-	# 隐藏 + 禁用碰撞
-	sprite.visible = false
+	# 表现层处理死亡显示，玩法层只禁用碰撞。
 	_present_dead(true)
 	collision_layer = 0
 	collision_mask = 0
@@ -165,7 +256,6 @@ func _revive() -> void:
 		return
 	GameManager.revive()
 	health.reset()
-	sprite.visible = true
 	_present_dead(false)
 	collision_layer = 1
 	collision_mask = 3
@@ -197,6 +287,13 @@ func _present_attack(direction: Vector2) -> void:
 	presenter.play_attack(direction)
 
 
+func _present_hit() -> void:
+	if presenter == null:
+		_warn_missing_presenter()
+		return
+	presenter.play_hit()
+
+
 func _present_dead(dead: bool) -> void:
 	if presenter == null:
 		_warn_missing_presenter()
@@ -209,3 +306,47 @@ func _warn_missing_presenter() -> void:
 		return
 	_missing_presenter_warned = true
 	push_warning("[Player] Presenter is missing; gameplay continues without presentation feedback")
+
+
+func create_snapshot() -> Dictionary:
+	return {
+		"entity_id": name,
+		"position": [global_position.x, global_position.y],
+		"velocity": [velocity.x, velocity.y],
+		"facing_direction": [_facing_direction.x, _facing_direction.y],
+		"stamina": _stamina_model.create_snapshot() if _stamina_model != null else {},
+		"health": health.create_snapshot() if health != null else {},
+		"revive": _revive_model.create_snapshot() if _revive_model != null else {},
+		"collision_layer": collision_layer,
+		"collision_mask": collision_mask,
+	}
+
+
+func restore_snapshot(snapshot: Dictionary) -> bool:
+	for key: String in ["entity_id", "position", "velocity", "facing_direction", "stamina", "health", "revive", "collision_layer", "collision_mask"]:
+		if not snapshot.has(key):
+			return false
+	var position: Vector2 = _decode_vector(snapshot["position"])
+	var restored_velocity: Vector2 = _decode_vector(snapshot["velocity"])
+	var facing: Vector2 = _decode_vector(snapshot["facing_direction"])
+	if not position.is_finite() or not restored_velocity.is_finite() or not facing.is_finite():
+		return false
+	if _stamina_model == null or not _stamina_model.restore_snapshot(snapshot["stamina"]):
+		return false
+	if health == null or not health.restore_snapshot(snapshot["health"]):
+		return false
+	if _revive_model == null or not _revive_model.restore_snapshot(snapshot["revive"]):
+		return false
+	global_position = position
+	velocity = restored_velocity
+	_facing_direction = facing
+	collision_layer = int(snapshot["collision_layer"])
+	collision_mask = int(snapshot["collision_mask"])
+	_present_dead(_revive_model.is_dead())
+	return true
+
+
+func _decode_vector(value: Variant) -> Vector2:
+	if value is Array and (value as Array).size() == 2:
+		return Vector2(float((value as Array)[0]), float((value as Array)[1]))
+	return Vector2(INF, INF)

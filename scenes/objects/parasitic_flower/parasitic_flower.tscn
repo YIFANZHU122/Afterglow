@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/parasitic_flower.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/art/pollution/parasitic_flower.svg" id="2_texture"]
+
+[node name="ParasiticFlower" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="FlowerSprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_texture")
+scale = Vector2(0.48, 0.48)

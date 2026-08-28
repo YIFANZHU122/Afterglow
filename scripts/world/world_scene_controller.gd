@@ -4,12 +4,15 @@ class_name WorldSceneController
 ## 世界场景组装器：负责出生点注入和相机边界，不实现关卡规则。
 
 const WALL_THICKNESS: float = 40.0
+const DEFAULT_WORLD_SIZE: Vector2 = Vector2(2560.0, 1440.0)
 
 
 func _ready() -> void:
 	_start_initial_run_if_needed()
+	GameManager.register_runtime_scene(self)
 	_place_player_at_spawn()
 	_setup_camera_limits()
+	call_deferred("_apply_pending_scene_state_deferred")
 
 
 func _start_initial_run_if_needed() -> void:
@@ -20,7 +23,7 @@ func _start_initial_run_if_needed() -> void:
 
 
 func _get_world_size() -> Vector2:
-	return Vector2(1280.0, 720.0)
+	return DEFAULT_WORLD_SIZE
 
 
 func _place_player_at_spawn() -> void:
@@ -45,3 +48,7 @@ func _setup_camera_limits() -> void:
 	camera.limit_top = int(WALL_THICKNESS)
 	camera.limit_right = int(world_size.x - WALL_THICKNESS)
 	camera.limit_bottom = int(world_size.y - WALL_THICKNESS)
+
+
+func _apply_pending_scene_state_deferred() -> void:
+	GameManager.apply_pending_scene_state(self)

@@ -1,8 +1,25 @@
 extends Node
 
 const RUN_SESSION_MODEL_SCRIPT: Script = preload("res://scripts/core/run_session_model.gd")
+const RUN_RANDOM_STREAM_MODEL_SCRIPT: Script = preload("res://scripts/core/run_random_stream_model.gd")
+const RUN_SNAPSHOT_DATA_SCRIPT: Script = preload("res://scripts/core/run_snapshot_data.gd")
+const RUN_SAVE_MODEL_SCRIPT: Script = preload("res://scripts/core/run_save_model.gd")
+const BOSS_PROGRESS_MODEL_SCRIPT: Script = preload("res://scripts/combat/boss_progress_model.gd")
 const RUN_REWARD_MODEL_SCRIPT: Script = preload("res://scripts/progression/run_reward_model.gd")
 const RUN_BUILD_MODEL_SCRIPT: Script = preload("res://scripts/progression/run_build_model.gd")
+const SURVIVAL_TUNING_SCRIPT: Script = preload("res://scripts/data/survival_tuning.gd")
+const SURVIVAL_VITALS_MODEL_SCRIPT: Script = preload("res://scripts/player/survival_vitals_model.gd")
+const SURVIVAL_CLOCK_MODEL_SCRIPT: Script = preload("res://scripts/world/survival_clock_model.gd")
+const DISASTER_SCHEDULER_MODEL_SCRIPT: Script = preload("res://scripts/world/disaster_scheduler_model.gd")
+const RESOURCE_BUDGET_MODEL_SCRIPT: Script = preload("res://scripts/world/resource_budget_model.gd")
+const ESCAPE_OBJECTIVE_MODEL_SCRIPT: Script = preload("res://scripts/world/escape_objective_model.gd")
+const THREAT_BUDGET_MODEL_SCRIPT: Script = preload("res://scripts/world/threat_budget_model.gd")
+const DISASTER_EVENT_MODEL_SCRIPT: Script = preload("res://scripts/world/disaster_event_model.gd")
+const INVENTORY_MODEL_SCRIPT: Script = preload("res://scripts/items/inventory_model.gd")
+const WORLD_SCENE_CATALOG_SCRIPT: Script = preload("res://scripts/world/world_scene_catalog.gd")
+const META_PROGRESSION_MODEL_SCRIPT: Script = preload("res://scripts/progression/meta_progression_model.gd")
+const RUN_BUFF_DRAFT_MODEL_SCRIPT: Script = preload("res://scripts/progression/run_buff_draft_model.gd")
+const UPGRADE_DEFINITION_SCRIPT: Script = preload("res://scripts/data/upgrade_definition.gd")
 
 ## GameManager —— 全局游戏管理器（Autoload 单例）
 ## 职责：本局运行会话、场景切换、传送出生点记录、传送冷却防抖
@@ -10,6 +27,20 @@ const RUN_BUILD_MODEL_SCRIPT: Script = preload("res://scripts/progression/run_bu
 signal run_state_changed(state: int, floor_number: int)
 signal run_reward_changed(level: int, xp: int, xp_to_next_level: int)
 signal run_build_changed(damage_multiplier: float, move_speed_multiplier: float)
+signal meta_progression_changed(crystals: int, equipped_initial_buff: StringName, reroll_level: int)
+signal survival_changed(
+	hunger: float,
+	water: float,
+	elapsed_seconds: float,
+	day_index: int,
+	is_night: bool,
+	overtime_stage: int,
+	disaster_probability: float
+)
+signal survival_environment_damage(damage_ratio: float)
+signal escape_objective_changed(parts: int, fuel: int, cloth: int, key: int, startup_seconds: float, started: bool)
+signal disaster_changed(kind: int, phase: int, remaining_seconds: float, risk_level: int, countermeasure_progress: float)
+signal boss_progress_changed(phase: int, health: float, completion_route: int, components: int, devices: int)
 
 # 传送后玩家应出现的出生点名称（由 TransitionZone 设置，由各场景读取）
 var spawn_point_name: String = "PlayerSpawn"
@@ -17,23 +48,64 @@ var spawn_point_name: String = "PlayerSpawn"
 # 传送冷却计时器（秒），防止传送后出生在传送区域内反复触发
 var _transition_cooldown: float = 0.0
 var _run_session: RefCounted
+var _run_random_stream: RefCounted
+var _run_save: RefCounted
+var _boss_progress: RefCounted
 var _run_reward: RefCounted
 var _run_build: RefCounted
+var _survival_vitals: RefCounted
+var _survival_clock: RefCounted
+var _disaster_scheduler: RefCounted
+var _resource_budget: RefCounted
+var _escape_objective: RefCounted
+var _threat_budget: RefCounted
+var _active_disasters: Array[RefCounted] = []
+var _allowed_disaster_kinds: Array[int] = []
+var _disaster_rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var _run_difficulty: int = SURVIVAL_TUNING_SCRIPT.Difficulty.NORMAL
 var _reward_choice_used: bool = false
+var _meta_crystals: int = 0
+var _meta_progression: RefCounted
+var _run_buff_draft: RefCounted
+var _run_settlement_awarded: bool = false
+var _pending_scene_state: Dictionary = {}
+var _collected_escape_material_ids: Array[String] = []
+var _runtime_scene: Node
+var _resume_scene_id: StringName = StringName()
+var _resume_scene_path: String = ""
+var _resume_spawn_point_name: StringName = StringName()
+
+const META_SAVE_PATH: String = "user://afterglow_meta.json"
 
 # 冷却时长
 const COOLDOWN_TIME: float = 0.5
 
 
+func _init() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+
 func _ready() -> void:
 	_run_session = RUN_SESSION_MODEL_SCRIPT.new()
+	_run_random_stream = RUN_RANDOM_STREAM_MODEL_SCRIPT.new()
+	_run_save = RUN_SAVE_MODEL_SCRIPT.new()
+	_boss_progress = BOSS_PROGRESS_MODEL_SCRIPT.new()
 	_run_reward = RUN_REWARD_MODEL_SCRIPT.new()
 	_run_build = RUN_BUILD_MODEL_SCRIPT.new()
+	_reset_survival_models()
+	_reset_escape_objective()
+	_reset_allowed_disaster_kinds()
+	_disaster_rng.seed = 20260827
+	_meta_progression = META_PROGRESSION_MODEL_SCRIPT.new()
+	_run_buff_draft = RUN_BUFF_DRAFT_MODEL_SCRIPT.new(20260827)
+	_load_meta_progression()
 
 
 func _process(delta: float) -> void:
 	if _transition_cooldown > 0.0:
 		_transition_cooldown -= delta
+	if _run_session != null and _run_session.is_run_active() and not _run_session.is_paused():
+		tick_survival(delta)
 
 
 ## 切换到目标场景，并设置出生点名称
@@ -48,16 +120,60 @@ func change_scene(scene_path: String, spawn_name: String = "PlayerSpawn") -> voi
 	get_tree().change_scene_to_file(scene_path)
 
 
-## 开始一局新的运行；仅空闲状态可调用。
-func start_run() -> bool:
-	if _run_session == null or not _run_session.start_run():
+func register_runtime_scene(scene: Node) -> bool:
+	if scene == null:
 		return false
+	var floor_number: int = get_floor_number()
+	var catalog: RefCounted = WORLD_SCENE_CATALOG_SCRIPT.new()
+	var scene_id: StringName = catalog.get_scene_id(floor_number)
+	var scene_path: String = catalog.get_scene_path(floor_number)
+	var actual_scene_path: String = String(scene.scene_file_path)
+	if scene_id.is_empty() or scene_path.is_empty() or actual_scene_path != scene_path:
+		return false
+	_runtime_scene = scene
+	_resume_scene_id = scene_id
+	_resume_scene_path = actual_scene_path
+	_resume_spawn_point_name = StringName(spawn_point_name)
+	return true
+
+
+## 开始一局新的运行；仅空闲状态可调用。
+func start_run(difficulty: int = -1, run_seed: int = 20260827, total_floors: int = 6) -> bool:
+	if _run_session == null or not _run_session.start_run(difficulty, total_floors):
+		return false
+	_run_difficulty = _run_session.get_difficulty()
+	if _run_save != null:
+		_run_save.clear_files()
+	if _run_random_stream == null:
+		_run_random_stream = RUN_RANDOM_STREAM_MODEL_SCRIPT.new()
+	if not _run_random_stream.start(run_seed, 1):
+		_run_session.reset()
+		return false
+	get_tree().paused = false
 	_run_reward = RUN_REWARD_MODEL_SCRIPT.new()
 	_run_build = RUN_BUILD_MODEL_SCRIPT.new()
+	_run_buff_draft = RUN_BUFF_DRAFT_MODEL_SCRIPT.new(run_seed)
+	_run_buff_draft.add_reroll_charges(_meta_progression.get_run_reroll_charges())
+	_apply_equipped_initial_buff()
+	_reset_survival_models()
+	_reset_escape_objective()
+	_boss_progress = BOSS_PROGRESS_MODEL_SCRIPT.new()
+	_active_disasters.clear()
+	_collected_escape_material_ids.clear()
+	_pending_scene_state.clear()
+	_resume_scene_id = StringName()
+	_resume_scene_path = ""
+	_resume_spawn_point_name = StringName()
+	_reset_allowed_disaster_kinds()
 	_reward_choice_used = false
+	_run_settlement_awarded = false
 	_emit_run_state_changed()
 	_emit_run_reward_changed()
 	_emit_run_build_changed()
+	_emit_meta_progression_changed()
+	_emit_survival_changed()
+	_emit_escape_objective_changed()
+	_emit_boss_progress_changed()
 	return true
 
 
@@ -85,11 +201,35 @@ func clear_floor() -> bool:
 	return true
 
 
-func apply_run_upgrade(definition: Resource) -> bool:
+func apply_run_upgrade(definition: Resource, quality_multiplier: float = 1.0, quality: int = 0) -> bool:
 	if _reward_choice_used or not is_objective_complete() or is_floor_clear() or _run_build == null:
 		return false
-	if not _run_build.apply_upgrade(definition):
+	if definition == null or definition.get_script() != UPGRADE_DEFINITION_SCRIPT \
+		or not bool(definition.call("is_valid")) \
+		or not is_finite(quality_multiplier) or quality_multiplier <= 0.0 \
+		or quality < UPGRADE_DEFINITION_SCRIPT.Quality.COMMON \
+		or quality > UPGRADE_DEFINITION_SCRIPT.Quality.LEGENDARY:
 		return false
+	var amount: float = float(definition.get("amount"))
+	var definition_multiplier: float = float(definition.get("quality_multiplier"))
+	var buff_id := StringName(definition.get("buff_id"))
+	if buff_id.is_empty():
+		buff_id = StringName(definition.get("id"))
+	var effect_type: int = int(definition.get("effect_type"))
+	var applied_amount: float = amount * maxf(definition_multiplier, 0.0) * quality_multiplier
+	if not _run_build.apply_effect(
+		effect_type,
+		applied_amount,
+		buff_id,
+		1,
+		quality
+	):
+		return false
+	if _run_buff_draft != null:
+		_run_buff_draft.apply_candidate(
+			buff_id,
+			applied_amount if effect_type == UPGRADE_DEFINITION_SCRIPT.EffectType.LUCK else 0.1
+		)
 	_reward_choice_used = true
 	_emit_run_build_changed()
 	return clear_floor()
@@ -107,6 +247,78 @@ func get_run_upgrade_stack(upgrade_id: StringName) -> int:
 	return _run_build.get_upgrade_stack(upgrade_id) if _run_build != null else 0
 
 
+func get_run_max_health_multiplier() -> float:
+	return _run_build.get_max_health_multiplier() if _run_build != null else 1.0
+
+
+func get_run_damage_reduction() -> float:
+	return _run_build.get_damage_reduction() if _run_build != null else 0.0
+
+
+func get_run_max_stamina_multiplier() -> float:
+	return _run_build.get_max_stamina_multiplier() if _run_build != null else 1.0
+
+
+func get_run_max_stamina_bonus() -> float:
+	return get_run_max_stamina_multiplier() - 1.0
+
+
+func get_run_stamina_regen_multiplier() -> float:
+	return _run_build.get_stamina_regen_multiplier() if _run_build != null else 1.0
+
+
+func get_run_xp_multiplier() -> float:
+	return _run_build.get_xp_multiplier() if _run_build != null else 1.0
+
+
+func get_run_luck() -> float:
+	return _run_build.get_luck() if _run_build != null else 0.0
+
+
+func get_run_survival_consumption_multiplier() -> float:
+	return _run_build.get_survival_consumption_multiplier() if _run_build != null else 1.0
+
+
+func get_run_upgrade_quality(upgrade_id: StringName) -> int:
+	return _run_build.get_upgrade_quality(upgrade_id) if _run_build != null else 0
+
+
+func get_run_upgrade_stacks() -> Dictionary:
+	return _run_build.get_upgrade_stacks() if _run_build != null else {}
+
+
+func get_run_buff_summary() -> Array[Dictionary]:
+	return _run_build.get_buff_summary() if _run_build != null else []
+
+
+func get_run_reroll_charges() -> int:
+	return _run_buff_draft.get_reroll_charges() if _run_buff_draft != null else 0
+
+
+func refresh_run_buff_candidates(buff_ids: Array, count: int = 4) -> Array[Dictionary]:
+	if _run_buff_draft == null:
+		return []
+	return _run_buff_draft.generate_candidates(buff_ids, count)
+
+
+func consume_run_buff_reroll() -> bool:
+	return _run_buff_draft != null and _run_buff_draft.consume_reroll()
+
+
+func apply_run_buff_effect(effect_type: int, amount: float, buff_id: StringName, quality_multiplier: float = 1.0) -> bool:
+	if _run_build == null or _run_buff_draft == null:
+		return false
+	var scaled_amount := amount * maxf(quality_multiplier, 0.0)
+	if not _run_build.apply_effect(effect_type, scaled_amount, buff_id):
+		return false
+	_run_buff_draft.apply_candidate(
+		buff_id,
+		scaled_amount if effect_type == UPGRADE_DEFINITION_SCRIPT.EffectType.LUCK else 0.1
+	)
+	_emit_run_build_changed()
+	return true
+
+
 func is_floor_clear() -> bool:
 	return get_run_state() == RUN_SESSION_MODEL_SCRIPT.State.FLOOR_CLEAR
 
@@ -115,8 +327,22 @@ func is_floor_clear() -> bool:
 func start_next_floor() -> bool:
 	if _run_session == null or not _run_session.start_next_floor():
 		return false
+	_run_difficulty = _run_session.get_difficulty()
+	if _run_random_stream != null:
+		_run_random_stream.begin_floor(_run_session.get_floor_number())
+	_survival_clock = SURVIVAL_CLOCK_MODEL_SCRIPT.new()
+	_disaster_scheduler = DISASTER_SCHEDULER_MODEL_SCRIPT.new(_run_difficulty)
+	_threat_budget = THREAT_BUDGET_MODEL_SCRIPT.new()
+	_active_disasters.clear()
+	_collected_escape_material_ids.clear()
+	_pending_scene_state.clear()
+	_reset_allowed_disaster_kinds()
+	_reset_escape_objective()
+	_boss_progress = BOSS_PROGRESS_MODEL_SCRIPT.new()
 	_reward_choice_used = false
 	_emit_run_state_changed()
+	_emit_survival_changed()
+	_emit_escape_objective_changed()
 	return true
 
 
@@ -139,7 +365,56 @@ func revive() -> bool:
 func end_run() -> bool:
 	if _run_session == null or not _run_session.end_run():
 		return false
+	_reset_escape_objective()
+	_active_disasters.clear()
+	_reset_allowed_disaster_kinds()
 	_emit_run_state_changed()
+	_emit_escape_objective_changed()
+	return true
+
+
+func complete_run() -> bool:
+	if _run_session == null or _boss_progress == null or _run_settlement_awarded:
+		return false
+	if not bool(_boss_progress.call("is_completion_claimed")) or not _run_session.complete_run():
+		return false
+	_run_settlement_awarded = true
+	add_meta_crystals(20)
+	if _run_save != null:
+		_run_save.invalidate_run("victory-%d" % get_run_seed())
+	_reset_escape_objective()
+	_active_disasters.clear()
+	_reset_allowed_disaster_kinds()
+	_emit_run_state_changed()
+	_emit_escape_objective_changed()
+	return true
+
+
+func finalize_run_failure() -> bool:
+	if _run_session == null or _run_settlement_awarded or not _run_session.end_run():
+		return false
+	_run_settlement_awarded = true
+	if _run_save != null:
+		_run_save.invalidate_run("failure-%d" % get_run_seed())
+	if _run_reward != null:
+		_run_reward.reset()
+	if _run_build != null:
+		_run_build.reset()
+	_run_buff_draft = RUN_BUFF_DRAFT_MODEL_SCRIPT.new()
+	Inventory.drop_all()
+	_reward_choice_used = false
+	_reset_survival_models()
+	_reset_escape_objective()
+	_boss_progress = BOSS_PROGRESS_MODEL_SCRIPT.new()
+	_run_random_stream = RUN_RANDOM_STREAM_MODEL_SCRIPT.new()
+	_active_disasters.clear()
+	_reset_allowed_disaster_kinds()
+	_emit_run_state_changed()
+	_emit_run_reward_changed()
+	_emit_run_build_changed()
+	_emit_survival_changed()
+	_emit_escape_objective_changed()
+	_emit_boss_progress_changed()
 	return true
 
 
@@ -150,19 +425,647 @@ func reset_run() -> bool:
 	var session_changed: bool = _run_session.reset()
 	var reward_changed: bool = _run_reward.reset() if _run_reward != null else false
 	var build_changed: bool = _run_build.reset() if _run_build != null else false
+	_run_buff_draft = RUN_BUFF_DRAFT_MODEL_SCRIPT.new()
 	_reward_choice_used = false
+	_run_difficulty = SURVIVAL_TUNING_SCRIPT.Difficulty.NORMAL
+	_run_difficulty = _run_session.get_difficulty()
+	_reset_survival_models()
+	_reset_escape_objective()
+	_active_disasters.clear()
+	_collected_escape_material_ids.clear()
+	_pending_scene_state.clear()
+	_resume_scene_id = StringName()
+	_resume_scene_path = ""
+	_resume_spawn_point_name = StringName()
+	_boss_progress = BOSS_PROGRESS_MODEL_SCRIPT.new()
+	_run_random_stream = RUN_RANDOM_STREAM_MODEL_SCRIPT.new()
+	_run_settlement_awarded = false
+	_reset_allowed_disaster_kinds()
+	get_tree().paused = false
 	if not session_changed and not reward_changed and not build_changed:
 		return false
 	_emit_run_state_changed()
 	_emit_run_reward_changed()
 	_emit_run_build_changed()
+	_emit_survival_changed()
+	_emit_escape_objective_changed()
 	return true
+
+
+func tick_survival(delta: float) -> float:
+	if delta <= 0.0 or _run_session == null or not _run_session.is_run_active() or _run_session.is_paused():
+		return 0.0
+	if _survival_vitals == null or _survival_clock == null or _disaster_scheduler == null:
+		return 0.0
+	_survival_clock.advance(delta)
+	if _threat_budget != null:
+		_threat_budget.set_time_context(_survival_clock.get_day_index(), _survival_clock.get_overtime_stage())
+	var damage_ratio: float = _survival_vitals.tick(
+		delta,
+		SURVIVAL_TUNING_SCRIPT.difficulty_consumption_multiplier(_run_difficulty) \
+		* get_run_survival_consumption_multiplier()
+	)
+	advance_disasters(delta)
+	if _disaster_scheduler.should_check(delta):
+		var disaster_rng := RandomNumberGenerator.new()
+		disaster_rng.seed = maxi(random_int(RUN_RANDOM_STREAM_MODEL_SCRIPT.STREAM_DISASTERS, 1, 2147483646), 1)
+		if _disaster_scheduler.roll_trigger(
+			disaster_rng,
+			_survival_clock.get_elapsed_seconds(),
+			get_active_disaster_count()
+		):
+			var kind: int = _disaster_scheduler.roll_disaster_kind(
+				disaster_rng,
+				_survival_clock.get_elapsed_seconds(),
+				_survival_clock.is_night()
+			)
+			if not start_disaster(kind):
+				_disaster_scheduler.register_miss()
+	if damage_ratio > 0.0:
+		survival_environment_damage.emit(damage_ratio)
+	_emit_survival_changed()
+	return damage_ratio
+
+
+func consume_food(amount: float) -> bool:
+	if _survival_vitals == null or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	var consumed: bool = _survival_vitals.consume_food(amount)
+	if consumed:
+		_emit_survival_changed()
+	return consumed
+
+
+func consume_water(amount: float) -> bool:
+	if _survival_vitals == null or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	var consumed: bool = _survival_vitals.consume_water(amount)
+	if consumed:
+		_emit_survival_changed()
+	return consumed
+
+
+func collect_escape_material(material_type: int, amount: int = 1) -> bool:
+	if _escape_objective == null or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	var collected: bool = _escape_objective.collect_material(material_type, amount)
+	if collected:
+		_emit_escape_objective_changed()
+	return collected
+
+
+func record_escape_material_entity(entity_id: String) -> bool:
+	if entity_id.is_empty() or _collected_escape_material_ids.has(entity_id):
+		return false
+	_collected_escape_material_ids.append(entity_id)
+	return true
+
+
+func get_escape_material_required(material_type: int) -> int:
+	return _escape_objective.get_required_amount(material_type) if _escape_objective != null else 0
+
+
+func get_escape_material_collected(material_type: int) -> int:
+	return _escape_objective.get_collected_amount(material_type) if _escape_objective != null else 0
+
+
+func has_all_escape_materials() -> bool:
+	return _escape_objective != null and _escape_objective.has_all_materials()
+
+
+func advance_escape_exit(delta: float, player_moving: bool, was_hit: bool, enemy_nearby: bool) -> bool:
+	if _escape_objective == null or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	var started: bool = _escape_objective.advance_exit_startup(delta, player_moving, was_hit, enemy_nearby)
+	_emit_escape_objective_changed()
+	return started
+
+
+func get_escape_startup_seconds() -> float:
+	return _escape_objective.get_exit_startup_seconds() if _escape_objective != null else 0.0
+
+
+func is_escape_exit_started() -> bool:
+	return _escape_objective != null and _escape_objective.is_exit_started()
+
+
+func depart_floor() -> bool:
+	if not is_floor_clear() or _escape_objective == null or not _escape_objective.is_exit_started():
+		return false
+	if _run_session.is_final_floor():
+		return false
+	var boundary_snapshot: RefCounted = _create_run_snapshot()
+	if not save_floor_boundary(boundary_snapshot):
+		return false
+	if not _escape_objective.consume_for_departure():
+		return false
+	if not start_next_floor():
+		return false
+	_emit_escape_objective_changed()
+	return true
+
+
+func get_guaranteed_food_budget() -> int:
+	return _resource_budget.get_guaranteed_food() if _resource_budget != null else 0
+
+
+func get_guaranteed_water_budget() -> int:
+	return _resource_budget.get_guaranteed_water() if _resource_budget != null else 0
+
+
+func get_total_food_budget() -> int:
+	return _resource_budget.get_total_food() if _resource_budget != null else 0
+
+
+func get_total_water_budget() -> int:
+	return _resource_budget.get_total_water() if _resource_budget != null else 0
+
+
+func pause_run() -> bool:
+	if _run_session == null or not _run_session.pause():
+		return false
+	get_tree().paused = true
+	_emit_run_state_changed()
+	_emit_survival_changed()
+	return true
+
+
+func resume_run() -> bool:
+	if _run_session == null or not _run_session.resume():
+		return false
+	get_tree().paused = false
+	_emit_run_state_changed()
+	_emit_survival_changed()
+	return true
+
+
+func set_run_difficulty(difficulty: int) -> bool:
+	if _run_session == null or not _run_session.configure_difficulty(difficulty):
+		return false
+	_run_difficulty = _run_session.get_difficulty()
+	return true
+
+
+func get_run_difficulty() -> int:
+	return _run_session.get_difficulty() if _run_session != null else _run_difficulty
+
+
+func get_run_seed() -> int:
+	return int(_run_random_stream.call("get_run_seed")) if _run_random_stream != null else 0
+
+
+func get_map_seed() -> int:
+	return int(_run_random_stream.call("get_map_seed")) if _run_random_stream != null else 0
+
+
+func get_random_event_index(stream_name: StringName) -> int:
+	return int(_run_random_stream.call("get_event_index", stream_name)) if _run_random_stream != null else -1
+
+
+func random_int(stream_name: StringName, from: int, to: int) -> int:
+	if _run_random_stream == null or _run_session == null or not _run_session.is_run_active():
+		return 0
+	return int(_run_random_stream.call("randi_range", stream_name, from, to))
+
+
+func random_float(stream_name: StringName) -> float:
+	if _run_random_stream == null or _run_session == null or not _run_session.is_run_active():
+		return 0.0
+	return float(_run_random_stream.call("randf", stream_name))
+
+
+func apply_boss_damage(amount: float) -> bool:
+	if not _can_advance_boss() or not bool(_boss_progress.call("apply_combat_damage", amount)):
+		return false
+	_emit_boss_progress_changed()
+	return true
+
+
+func acknowledge_boss_phase_transition() -> bool:
+	if not _can_advance_boss() or not bool(_boss_progress.call("acknowledge_phase_transition")):
+		return false
+	_emit_boss_progress_changed()
+	return true
+
+
+func collect_boss_component(component_index: int) -> bool:
+	if not _can_advance_boss() or not bool(_boss_progress.call("collect_suppression_component", component_index)):
+		return false
+	_emit_boss_progress_changed()
+	return true
+
+
+func activate_boss_device(device_index: int) -> bool:
+	if not _can_advance_boss() or not bool(_boss_progress.call("activate_environment_device", device_index)):
+		return false
+	_emit_boss_progress_changed()
+	return true
+
+
+func claim_boss_completion_route() -> int:
+	if _boss_progress == null or _run_session == null or not _run_session.is_final_floor() \
+		or _run_session.get_state() != RUN_SESSION_MODEL_SCRIPT.State.EXPLORING:
+		return BOSS_PROGRESS_MODEL_SCRIPT.CompletionRoute.NONE
+	var route: int = int(_boss_progress.call("claim_completion_route"))
+	if route == BOSS_PROGRESS_MODEL_SCRIPT.CompletionRoute.NONE:
+		return route
+	if not _run_session.complete_objective() or not _run_session.clear_floor():
+		return BOSS_PROGRESS_MODEL_SCRIPT.CompletionRoute.NONE
+	_emit_boss_progress_changed()
+	_emit_run_state_changed()
+	return route
+
+
+func get_boss_phase() -> int:
+	return int(_boss_progress.call("get_phase")) if _boss_progress != null else BOSS_PROGRESS_MODEL_SCRIPT.Phase.FIRST
+
+
+func get_boss_health() -> float:
+	return float(_boss_progress.call("get_health")) if _boss_progress != null else 0.0
+
+
+func is_boss_phase_transition_pending() -> bool:
+	return _boss_progress != null and bool(_boss_progress.call("is_phase_transition_pending"))
+
+
+func get_boss_collected_component_count() -> int:
+	return int(_boss_progress.call("get_collected_component_count")) if _boss_progress != null else 0
+
+
+func get_boss_activated_device_count() -> int:
+	return int(_boss_progress.call("get_activated_device_count")) if _boss_progress != null else 0
+
+
+func get_boss_completion_route() -> int:
+	return int(_boss_progress.call("get_completion_route")) if _boss_progress != null else BOSS_PROGRESS_MODEL_SCRIPT.CompletionRoute.NONE
+
+
+func add_meta_crystals(amount: int) -> bool:
+	if amount <= 0:
+		return false
+	if _meta_progression == null:
+		_meta_progression = META_PROGRESSION_MODEL_SCRIPT.new()
+	_meta_progression.add_crystals(amount)
+	_meta_crystals = _meta_progression.get_crystals()
+	_save_meta_progression()
+	_emit_meta_progression_changed()
+	return true
+
+
+func get_meta_crystals() -> int:
+	return _meta_progression.get_crystals() if _meta_progression != null else _meta_crystals
+
+
+func purchase_initial_buff(buff_id: StringName, cost: int = 10) -> bool:
+	if _meta_progression == null or not _meta_progression.purchase_initial_buff(buff_id, cost):
+		return false
+	_meta_crystals = _meta_progression.get_crystals()
+	_save_meta_progression()
+	_emit_meta_progression_changed()
+	return true
+
+
+func equip_initial_buff(buff_id: StringName) -> bool:
+	if _meta_progression == null or not _meta_progression.equip_initial_buff(buff_id):
+		return false
+	_save_meta_progression()
+	_emit_meta_progression_changed()
+	return true
+
+
+func purchase_reroll_level(cost: int) -> bool:
+	if _meta_progression == null or not _meta_progression.purchase_reroll_level(cost):
+		return false
+	_meta_crystals = _meta_progression.get_crystals()
+	_save_meta_progression()
+	_emit_meta_progression_changed()
+	return true
+
+
+func get_equipped_initial_buff() -> StringName:
+	return _meta_progression.get_equipped_initial_buff() if _meta_progression != null else StringName()
+
+
+func get_initial_buff_level(buff_id: StringName) -> int:
+	return _meta_progression.get_initial_buff_level(buff_id) if _meta_progression != null else 0
+
+
+func get_meta_reroll_level() -> int:
+	return _meta_progression.get_reroll_level() if _meta_progression != null else 0
+
+
+func has_valid_run_snapshot() -> bool:
+	return _run_save != null and bool(_run_save.call("has_valid_run"))
+
+
+func save_safe_exit(snapshot: RefCounted = null) -> bool:
+	if _run_save == null or _run_session == null or not _run_session.is_run_active() or _run_settlement_awarded:
+		return false
+	var run_snapshot: RefCounted = snapshot if snapshot != null else _create_run_snapshot()
+	return bool(_run_save.call("save_safe_exit", run_snapshot))
+
+
+func save_floor_boundary(snapshot: RefCounted = null) -> bool:
+	if _run_save == null or _run_session == null or not _run_session.is_run_active() or _run_settlement_awarded:
+		return false
+	var run_snapshot: RefCounted = snapshot if snapshot != null else _create_run_snapshot()
+	return bool(_run_save.call("save_floor_boundary", run_snapshot))
+
+
+func restore_safe_exit() -> bool:
+	if _run_save == null or _run_session == null or not _run_session.get_state() == RUN_SESSION_MODEL_SCRIPT.State.IDLE:
+		return false
+	var snapshot: RefCounted = _run_save.call("load_latest") as RefCounted
+	if snapshot == null:
+		return false
+	if not _restore_run_snapshot(snapshot):
+		return false
+	get_tree().paused = _run_session.is_paused()
+	_emit_all_runtime_state()
+	return true
+
+
+func restore_safe_exit_to_scene() -> bool:
+	if _run_save == null or _run_session == null or not _run_session.get_state() == RUN_SESSION_MODEL_SCRIPT.State.IDLE:
+		return false
+	var snapshot: RefCounted = _run_save.call("load_latest") as RefCounted
+	if snapshot == null:
+		return false
+	var session_state: Dictionary = snapshot.get("run_session_state") as Dictionary
+	if session_state == null:
+		return false
+	var floor_number: int = int(session_state.get("floor_number", 0))
+	var scene_id: StringName = StringName(session_state.get("scene_id", ""))
+	var scene_path: String = String(session_state.get("scene_path", ""))
+	var spawn_name: StringName = StringName(session_state.get("spawn_point_name", ""))
+	var catalog: RefCounted = WORLD_SCENE_CATALOG_SCRIPT.new()
+	if not catalog.is_valid_location(floor_number, scene_id, scene_path) \
+		or not catalog.is_valid_spawn_point(floor_number, spawn_name):
+		return false
+	if not _restore_run_snapshot(snapshot):
+		return false
+	_resume_scene_id = scene_id
+	_resume_scene_path = scene_path
+	_resume_spawn_point_name = spawn_name
+	spawn_point_name = String(spawn_name)
+	get_tree().paused = _run_session.is_paused()
+	_emit_all_runtime_state()
+	change_scene(scene_path, String(spawn_name))
+	return true
+
+
+func get_resume_scene_path() -> String:
+	return _resume_scene_path
+
+
+func get_resume_scene_id() -> StringName:
+	return _resume_scene_id
+
+
+func get_resume_spawn_point_name() -> StringName:
+	return _resume_spawn_point_name
+
+
+func get_hunger() -> float:
+	return _survival_vitals.get_hunger() if _survival_vitals != null else 0.0
+
+
+func get_water() -> float:
+	return _survival_vitals.get_water() if _survival_vitals != null else 0.0
+
+
+func get_floor_elapsed_seconds() -> float:
+	return _survival_clock.get_elapsed_seconds() if _survival_clock != null else 0.0
+
+
+func get_floor_day_index() -> int:
+	return _survival_clock.get_day_index() if _survival_clock != null else 1
+
+
+func is_floor_night() -> bool:
+	return _survival_clock.is_night() if _survival_clock != null else false
+
+
+func get_overtime_stage() -> int:
+	return _survival_clock.get_overtime_stage() if _survival_clock != null else 0
+
+
+func get_disaster_probability() -> float:
+	return _disaster_scheduler.get_trigger_probability(get_floor_elapsed_seconds()) \
+		if _disaster_scheduler != null else 0.0
+
+
+func start_disaster(kind: int) -> bool:
+	if _run_session == null or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	if _disaster_scheduler == null:
+		return false
+	if not _allowed_disaster_kinds.has(kind):
+		return false
+	var slot_limit: int = _get_disaster_slot_limit()
+	if slot_limit >= 0 and get_active_disaster_count() >= slot_limit:
+		return false
+	if _has_active_disaster_kind(kind):
+		return false
+	var elapsed_seconds: float = get_floor_elapsed_seconds()
+	if not _disaster_scheduler.can_trigger_kind(kind, elapsed_seconds):
+		return false
+	var event: RefCounted = DISASTER_EVENT_MODEL_SCRIPT.new()
+	if not bool(event.call("start_warning", kind, elapsed_seconds)):
+		return false
+	if not _disaster_scheduler.register_trigger(kind, elapsed_seconds):
+		return false
+	_active_disasters.append(event)
+	_emit_disaster_changed()
+	return true
+
+
+func advance_disasters(delta: float) -> bool:
+	if delta <= 0.0 or _run_session == null or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	var changed: bool = false
+	var had_active_events: bool = not _active_disasters.is_empty()
+	var remaining_events: Array[RefCounted] = []
+	for event: RefCounted in _active_disasters:
+		if bool(event.call("advance", delta)):
+			changed = true
+		if bool(event.call("is_active")):
+			remaining_events.append(event)
+		else:
+			changed = true
+	_active_disasters = remaining_events
+	if changed or had_active_events:
+		_emit_disaster_changed()
+	return changed
+
+
+func advance_disaster_countermeasure(kind: int, progress_delta: float, interrupted: bool = false) -> bool:
+	if _run_session == null or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	for event: RefCounted in _active_disasters:
+		if not bool(event.call("is_active")) or int(event.call("get_kind")) != kind:
+			continue
+		if interrupted:
+			var interruption_recorded: bool = bool(event.call("interrupt_countermeasure"))
+			if interruption_recorded:
+				_emit_disaster_changed()
+			return interruption_recorded
+		var progress_recorded: bool = bool(event.call("advance_countermeasure", progress_delta))
+		if progress_recorded and not bool(event.call("is_active")):
+			_active_disasters.erase(event)
+		if progress_recorded:
+			_emit_disaster_changed()
+		return progress_recorded
+	return false
+
+
+func get_active_disaster_count() -> int:
+	var count: int = 0
+	for event: RefCounted in _active_disasters:
+		if bool(event.call("is_active")):
+			count += 1
+	return count
+
+
+func get_threat_budget_bonus_ratio() -> float:
+	for event: RefCounted in _active_disasters:
+		if int(event.call("get_kind")) == DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.MONSTER_SURGE \
+			and int(event.call("get_phase")) == DISASTER_EVENT_MODEL_SCRIPT.Phase.ACTIVE:
+			return 0.5
+	return 0.0
+
+
+func get_current_threat_budget() -> int:
+	if _threat_budget == null:
+		return 0
+	_threat_budget.set_time_context(get_floor_day_index(), get_overtime_stage())
+	_threat_budget.set_disaster_bonus_ratio(get_threat_budget_bonus_ratio())
+	return int(_threat_budget.call("get_active_budget"))
+
+
+func get_primary_disaster_kind() -> int:
+	var event: RefCounted = _get_primary_disaster()
+	return int(event.call("get_kind")) if event != null else -1
+
+
+func get_primary_disaster_phase() -> int:
+	var event: RefCounted = _get_primary_disaster()
+	return int(event.call("get_phase")) if event != null else DISASTER_EVENT_MODEL_SCRIPT.Phase.IDLE
+
+
+func get_primary_disaster_remaining_seconds() -> float:
+	var event: RefCounted = _get_primary_disaster()
+	return float(event.call("get_remaining_seconds")) if event != null else 0.0
+
+
+func get_primary_disaster_countermeasure_progress() -> float:
+	var event: RefCounted = _get_primary_disaster()
+	return float(event.call("get_countermeasure_progress")) if event != null else 0.0
+
+
+func get_disaster_kind_at(index: int) -> int:
+	var event: RefCounted = _get_active_disaster_at(index)
+	return int(event.call("get_kind")) if event != null else -1
+
+
+func get_disaster_phase_at(index: int) -> int:
+	var event: RefCounted = _get_active_disaster_at(index)
+	return int(event.call("get_phase")) if event != null else DISASTER_EVENT_MODEL_SCRIPT.Phase.IDLE
+
+
+func get_disaster_remaining_seconds_at(index: int) -> float:
+	var event: RefCounted = _get_active_disaster_at(index)
+	return float(event.call("get_remaining_seconds")) if event != null else 0.0
+
+
+func get_disaster_countermeasure_progress_at(index: int) -> float:
+	var event: RefCounted = _get_active_disaster_at(index)
+	return float(event.call("get_countermeasure_progress")) if event != null else 0.0
+
+
+func get_disaster_risk_level_at(index: int) -> int:
+	var kind: int = get_disaster_kind_at(index)
+	if kind < 0:
+		return 0
+	return 3 if kind >= DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.FLASH_FLOOD else 1
+
+
+func configure_floor_disaster_kinds(kinds: Array[int]) -> bool:
+	if kinds.is_empty():
+		return false
+	var normalized_kinds: Array[int] = []
+	for kind: int in kinds:
+		if kind < DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.RAINSTORM \
+			or kind > DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.HUNTER:
+			return false
+		if not normalized_kinds.has(kind):
+			normalized_kinds.append(kind)
+	_allowed_disaster_kinds = normalized_kinds
+	return true
+
+
+func get_primary_disaster_risk_level() -> int:
+	var kind: int = get_primary_disaster_kind()
+	if kind < 0:
+		return 0
+	return 3 if kind >= DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.FLASH_FLOOD else 1
+
+
+func _get_disaster_slot_limit() -> int:
+	return SURVIVAL_TUNING_SCRIPT.disaster_slot_limit(_run_difficulty)
+
+
+func _has_active_disaster_kind(kind: int) -> bool:
+	for event: RefCounted in _active_disasters:
+		if bool(event.call("is_active")) and int(event.call("get_kind")) == kind:
+			return true
+	return false
+
+
+func _get_primary_disaster() -> RefCounted:
+	for event: RefCounted in _active_disasters:
+		if bool(event.call("is_active")):
+			return event
+	return null
+
+
+func _get_active_disaster_at(index: int) -> RefCounted:
+	if index < 0:
+		return null
+	var active_index: int = 0
+	for event: RefCounted in _active_disasters:
+		if not bool(event.call("is_active")):
+			continue
+		if active_index == index:
+			return event
+		active_index += 1
+	return null
+
+
+func _reset_allowed_disaster_kinds() -> void:
+	_allowed_disaster_kinds.clear()
+	for kind in range(
+		DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.RAINSTORM,
+		DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.HUNTER + 1
+	):
+		_allowed_disaster_kinds.append(kind)
+
+
+func _emit_disaster_changed() -> void:
+	disaster_changed.emit(
+		get_primary_disaster_kind(),
+		get_primary_disaster_phase(),
+		get_primary_disaster_remaining_seconds(),
+		get_primary_disaster_risk_level(),
+		get_primary_disaster_countermeasure_progress()
+	)
 
 
 func add_run_xp(amount: int) -> bool:
 	if _run_reward == null or amount <= 0:
 		return false
-	var leveled_up: bool = _run_reward.add_xp(amount)
+	var scaled_amount: int = maxi(int(round(float(amount) * get_run_xp_multiplier())), 1)
+	var leveled_up: bool = _run_reward.add_xp(scaled_amount)
 	_emit_run_reward_changed()
 	return leveled_up
 
@@ -187,6 +1090,10 @@ func get_floor_number() -> int:
 	return _run_session.get_floor_number() if _run_session != null else 0
 
 
+func get_total_floors() -> int:
+	return _run_session.get_total_floors() if _run_session != null else RUN_SESSION_MODEL_SCRIPT.DEFAULT_TOTAL_FLOORS
+
+
 func is_run_idle() -> bool:
 	return get_run_state() == RUN_SESSION_MODEL_SCRIPT.State.IDLE
 
@@ -204,6 +1111,43 @@ func is_run_dead() -> bool:
 	return get_run_state() == RUN_SESSION_MODEL_SCRIPT.State.DEAD
 
 
+func _reset_survival_models() -> void:
+	_survival_vitals = SURVIVAL_VITALS_MODEL_SCRIPT.new()
+	_survival_clock = SURVIVAL_CLOCK_MODEL_SCRIPT.new()
+	_disaster_scheduler = DISASTER_SCHEDULER_MODEL_SCRIPT.new(_run_difficulty)
+	_threat_budget = THREAT_BUDGET_MODEL_SCRIPT.new()
+
+
+func _reset_escape_objective() -> void:
+	_resource_budget = RESOURCE_BUDGET_MODEL_SCRIPT.new(_run_difficulty)
+	_escape_objective = ESCAPE_OBJECTIVE_MODEL_SCRIPT.new()
+
+
+func _emit_survival_changed() -> void:
+	survival_changed.emit(
+		get_hunger(),
+		get_water(),
+		get_floor_elapsed_seconds(),
+		get_floor_day_index(),
+		is_floor_night(),
+		get_overtime_stage(),
+		get_disaster_probability()
+	)
+
+
+func _emit_escape_objective_changed() -> void:
+	if _escape_objective == null:
+		return
+	escape_objective_changed.emit(
+		_escape_objective.get_collected_amount(ESCAPE_OBJECTIVE_MODEL_SCRIPT.MaterialType.PARTS),
+		_escape_objective.get_collected_amount(ESCAPE_OBJECTIVE_MODEL_SCRIPT.MaterialType.FUEL),
+		_escape_objective.get_collected_amount(ESCAPE_OBJECTIVE_MODEL_SCRIPT.MaterialType.CLOTH),
+		_escape_objective.get_collected_amount(ESCAPE_OBJECTIVE_MODEL_SCRIPT.MaterialType.KEY),
+		_escape_objective.get_exit_startup_seconds(),
+		_escape_objective.is_exit_started()
+	)
+
+
 func _emit_run_state_changed() -> void:
 	run_state_changed.emit(get_run_state(), get_floor_number())
 
@@ -214,6 +1158,425 @@ func _emit_run_reward_changed() -> void:
 
 func _emit_run_build_changed() -> void:
 	run_build_changed.emit(get_run_damage_multiplier(), get_run_move_speed_multiplier())
+
+
+func _emit_boss_progress_changed() -> void:
+	boss_progress_changed.emit(
+		get_boss_phase(),
+		get_boss_health(),
+		get_boss_completion_route(),
+		get_boss_collected_component_count(),
+		get_boss_activated_device_count()
+	)
+
+
+func _can_advance_boss() -> bool:
+	return _run_session != null \
+		and _boss_progress != null \
+		and _run_session.is_run_active() \
+		and not _run_session.is_paused() \
+		and _run_session.is_final_floor() \
+		and _run_session.get_state() == RUN_SESSION_MODEL_SCRIPT.State.EXPLORING
+
+
+func _create_run_snapshot() -> RefCounted:
+	var snapshot: RefCounted = RUN_SNAPSHOT_DATA_SCRIPT.new()
+	var run_session_state: Dictionary = _run_session.create_snapshot()
+	var catalog: RefCounted = WORLD_SCENE_CATALOG_SCRIPT.new()
+	var floor_number: int = int(run_session_state.get("floor_number", 0))
+	var scene_id: StringName = _resume_scene_id
+	var scene_path: String = _resume_scene_path
+	var spawn_name: StringName = _resume_spawn_point_name
+	if floor_number > 0:
+		if scene_id.is_empty():
+			scene_id = catalog.get_scene_id(floor_number)
+		if scene_path.is_empty():
+			scene_path = catalog.get_scene_path(floor_number)
+		if spawn_name.is_empty():
+			spawn_name = catalog.get_default_spawn_point(floor_number)
+	run_session_state["scene_id"] = scene_id
+	run_session_state["scene_path"] = scene_path
+	run_session_state["spawn_point_name"] = spawn_name
+	snapshot.set("run_session_state", run_session_state)
+	snapshot.set("random_stream_state", _run_random_stream.create_snapshot())
+	snapshot.set("survival_state", {
+		"vitals": _survival_vitals.create_snapshot(),
+		"clock": _survival_clock.create_snapshot(),
+		"scheduler": _disaster_scheduler.create_snapshot(),
+		"threat_budget": _threat_budget.create_snapshot(),
+		"reward": _run_reward.create_snapshot(),
+		"build": _run_build.create_snapshot(),
+		"buff_draft": _run_buff_draft.create_snapshot() if _run_buff_draft != null else {},
+		"reward_choice_used": _reward_choice_used,
+	})
+	snapshot.set("boss_state", _boss_progress.create_snapshot())
+	snapshot.set("escape_state", _escape_objective.create_snapshot())
+	var disaster_snapshots: Array[Dictionary] = []
+	for event: RefCounted in _active_disasters:
+		disaster_snapshots.append(event.create_snapshot())
+	snapshot.set("disaster_state", {
+		"events": disaster_snapshots,
+		"allowed_kinds": _allowed_disaster_kinds.duplicate(),
+	})
+	var player_state: Dictionary = {}
+	var enemy_entities: Array[Dictionary] = []
+	var current_scene: Node = _runtime_scene if is_instance_valid(_runtime_scene) else null
+	if current_scene != null:
+		var player: Node = current_scene.get_node_or_null("Player")
+		if player != null and player.has_method("create_snapshot"):
+			player_state = player.call("create_snapshot")
+		for entity: Node in _get_scene_group_nodes(current_scene, "enemy"):
+			if entity.has_method("create_snapshot"):
+				enemy_entities.append(entity.call("create_snapshot"))
+	snapshot.set("player_state", player_state)
+	snapshot.set("enemy_state", {"entities": enemy_entities})
+	snapshot.set("inventory_state", Inventory.create_snapshot())
+	snapshot.set("building_state", _create_building_snapshot(current_scene))
+	snapshot.set("interaction_state", _create_interaction_snapshot(current_scene))
+	return snapshot
+
+
+func get_runtime_snapshot() -> RefCounted:
+	return _create_run_snapshot() if _run_session != null and _run_session.is_run_active() else null
+
+
+func _restore_run_snapshot(snapshot: RefCounted) -> bool:
+	if _run_session == null or not _run_session.get_state() == RUN_SESSION_MODEL_SCRIPT.State.IDLE:
+		return false
+	if snapshot == null or snapshot.get_script() != RUN_SNAPSHOT_DATA_SCRIPT:
+		return false
+	var restored_session: RefCounted = RUN_SESSION_MODEL_SCRIPT.new()
+	var restored_random: RefCounted = RUN_RANDOM_STREAM_MODEL_SCRIPT.new()
+	var restored_boss: RefCounted = BOSS_PROGRESS_MODEL_SCRIPT.new()
+	if not bool(restored_session.call("restore_snapshot", snapshot.get("run_session_state"))):
+		return false
+	var restored_session_state: Dictionary = snapshot.get("run_session_state") as Dictionary
+	var restored_floor_number: int = restored_session.get_floor_number()
+	var restored_scene_id: StringName = StringName(restored_session_state.get("scene_id", ""))
+	var restored_scene_path: String = String(restored_session_state.get("scene_path", ""))
+	var restored_spawn_name: StringName = StringName(restored_session_state.get("spawn_point_name", ""))
+	var has_scene_id: bool = restored_session_state.has("scene_id")
+	var has_scene_path: bool = restored_session_state.has("scene_path")
+	var has_spawn_name: bool = restored_session_state.has("spawn_point_name")
+	var location_metadata_count: int = int(has_scene_id) + int(has_scene_path) + int(has_spawn_name)
+	var catalog: RefCounted = WORLD_SCENE_CATALOG_SCRIPT.new()
+	if location_metadata_count == 0 and restored_floor_number > 0:
+		restored_scene_id = catalog.get_scene_id(restored_floor_number)
+		restored_scene_path = catalog.get_scene_path(restored_floor_number)
+		restored_spawn_name = catalog.get_default_spawn_point(restored_floor_number)
+	elif location_metadata_count > 0 and location_metadata_count < 3:
+		return false
+	if restored_floor_number > 0 \
+		and (not catalog.is_valid_location(restored_floor_number, restored_scene_id, restored_scene_path) \
+		or not catalog.is_valid_spawn_point(restored_floor_number, restored_spawn_name)):
+		return false
+	if not bool(restored_random.call("restore_snapshot", snapshot.get("random_stream_state"))):
+		return false
+	if not bool(restored_boss.call("restore_snapshot", snapshot.get("boss_state"))):
+		return false
+	var restored_player_state: Dictionary = snapshot.get("player_state") as Dictionary
+	var restored_enemy_state: Dictionary = snapshot.get("enemy_state") as Dictionary
+	var restored_building_state: Dictionary = snapshot.get("building_state") as Dictionary
+	var restored_interaction_state: Dictionary = snapshot.get("interaction_state") as Dictionary
+	if restored_player_state == null or restored_enemy_state == null or restored_building_state == null or restored_interaction_state == null:
+		return false
+	if not _validate_entity_snapshot(restored_player_state, false) or not _validate_enemy_snapshot(restored_enemy_state):
+		return false
+	if not _validate_interaction_snapshot(restored_interaction_state):
+		return false
+	var survival_state: Dictionary = snapshot.get("survival_state") as Dictionary
+	if survival_state == null:
+		return false
+	var restored_vitals: RefCounted = SURVIVAL_VITALS_MODEL_SCRIPT.new()
+	var restored_clock: RefCounted = SURVIVAL_CLOCK_MODEL_SCRIPT.new()
+	var restored_scheduler: RefCounted = DISASTER_SCHEDULER_MODEL_SCRIPT.new(restored_session.get_difficulty())
+	var restored_threat: RefCounted = THREAT_BUDGET_MODEL_SCRIPT.new()
+	var restored_reward: RefCounted = RUN_REWARD_MODEL_SCRIPT.new()
+	var restored_build: RefCounted = RUN_BUILD_MODEL_SCRIPT.new()
+	var restored_buff_draft: RefCounted = RUN_BUFF_DRAFT_MODEL_SCRIPT.new()
+	if not survival_state.has("vitals") or not restored_vitals.restore_snapshot(survival_state["vitals"]):
+		return false
+	if not survival_state.has("clock") or not restored_clock.restore_snapshot(survival_state["clock"]):
+		return false
+	if not survival_state.has("scheduler") or not restored_scheduler.restore_snapshot(survival_state["scheduler"]):
+		return false
+	if not survival_state.has("threat_budget") or not restored_threat.restore_snapshot(survival_state["threat_budget"]):
+		return false
+	if not survival_state.has("reward") or not restored_reward.restore_snapshot(survival_state["reward"]):
+		return false
+	if not survival_state.has("build") or not restored_build.restore_snapshot(survival_state["build"]):
+		return false
+	var buff_draft_state: Variant = survival_state.get("buff_draft", {})
+	if buff_draft_state is Dictionary and not (buff_draft_state as Dictionary).is_empty() \
+		and not restored_buff_draft.restore_snapshot(buff_draft_state):
+		return false
+	var restored_escape: RefCounted = ESCAPE_OBJECTIVE_MODEL_SCRIPT.new()
+	if not bool(restored_escape.call("restore_snapshot", snapshot.get("escape_state"))):
+		return false
+	var inventory_state: Dictionary = snapshot.get("inventory_state") as Dictionary
+	if inventory_state == null:
+		return false
+	var inventory_validator: RefCounted = INVENTORY_MODEL_SCRIPT.new()
+	if not inventory_validator.restore_snapshot(inventory_state):
+		return false
+	var disaster_state: Dictionary = snapshot.get("disaster_state") as Dictionary
+	if disaster_state == null:
+		return false
+	var restored_allowed_disaster_kinds: Array[int] = []
+	for raw_kind: Variant in disaster_state.get("allowed_kinds", []):
+		var kind: int = int(raw_kind)
+		if kind < DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.RAINSTORM or kind > DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.HUNTER:
+			return false
+		if not restored_allowed_disaster_kinds.has(kind):
+			restored_allowed_disaster_kinds.append(kind)
+	var restored_disasters: Array[RefCounted] = []
+	for event_data: Variant in disaster_state.get("events", []):
+		var event: RefCounted = DISASTER_EVENT_MODEL_SCRIPT.new()
+		if not bool(event.call("restore_snapshot", event_data)):
+			return false
+		restored_disasters.append(event)
+	if not _validate_building_snapshot(restored_building_state):
+		return false
+	_run_session = restored_session
+	_run_random_stream = restored_random
+	_boss_progress = restored_boss
+	_run_difficulty = _run_session.get_difficulty()
+	_survival_vitals = restored_vitals
+	_survival_clock = restored_clock
+	_disaster_scheduler = restored_scheduler
+	_threat_budget = restored_threat
+	_run_reward = restored_reward
+	_run_build = restored_build
+	_run_buff_draft = restored_buff_draft
+	_escape_objective = restored_escape
+	_reward_choice_used = bool(survival_state.get("reward_choice_used", false))
+	_active_disasters = restored_disasters
+	_allowed_disaster_kinds = restored_allowed_disaster_kinds
+	if not Inventory.restore_snapshot(inventory_state):
+		return false
+	_pending_scene_state = {
+		"floor_number": restored_floor_number,
+		"scene_id": restored_scene_id,
+		"scene_path": restored_scene_path,
+		"spawn_point_name": restored_spawn_name,
+		"run_session_state": {
+			"floor_number": restored_floor_number,
+			"scene_id": restored_scene_id,
+			"scene_path": restored_scene_path,
+			"spawn_point_name": restored_spawn_name,
+		},
+		"player_state": restored_player_state.duplicate(true),
+		"enemy_state": restored_enemy_state.duplicate(true),
+		"building_state": restored_building_state.duplicate(true),
+		"interaction_state": restored_interaction_state.duplicate(true),
+	}
+	_collected_escape_material_ids.clear()
+	for raw_id: Variant in restored_interaction_state.get("escape_material_ids", []):
+		_collected_escape_material_ids.append(String(raw_id))
+	_run_settlement_awarded = false
+	_resume_scene_id = restored_scene_id
+	_resume_scene_path = restored_scene_path
+	_resume_spawn_point_name = restored_spawn_name
+	if not restored_spawn_name.is_empty():
+		spawn_point_name = String(restored_spawn_name)
+	return true
+
+
+func apply_pending_scene_state(scene: Node) -> bool:
+	if _pending_scene_state.is_empty():
+		return true
+	if scene == null:
+		return false
+	var pending_session_state: Dictionary = _pending_scene_state.get("run_session_state", {}) as Dictionary
+	var pending_floor_number: int = int(_pending_scene_state.get("floor_number", pending_session_state.get("floor_number", 0)))
+	var pending_scene_id: StringName = StringName(_pending_scene_state.get("scene_id", pending_session_state.get("scene_id", "")))
+	var pending_scene_path: String = String(_pending_scene_state.get("scene_path", pending_session_state.get("scene_path", "")))
+	var pending_spawn_name: StringName = StringName(_pending_scene_state.get("spawn_point_name", pending_session_state.get("spawn_point_name", "")))
+	var catalog: RefCounted = WORLD_SCENE_CATALOG_SCRIPT.new()
+	if not catalog.is_valid_location(pending_floor_number, pending_scene_id, pending_scene_path) \
+		or not catalog.is_valid_spawn_point(pending_floor_number, pending_spawn_name):
+		return false
+	if String(scene.scene_file_path) != pending_scene_path:
+		return false
+	var player_state: Dictionary = _pending_scene_state.get("player_state", {}) as Dictionary
+	var player: Node = scene.get_node_or_null("Player")
+	if not player_state.is_empty() and (player == null or not player.has_method("restore_snapshot")):
+		return false
+	var enemy_state: Dictionary = _pending_scene_state.get("enemy_state", {}) as Dictionary
+	var enemy_by_id: Dictionary = {}
+	for entity: Node in _get_scene_group_nodes(scene, "enemy"):
+		enemy_by_id[entity.name] = entity
+	var enemy_snapshots: Array = enemy_state.get("entities", []) as Array
+	for raw_snapshot: Variant in enemy_snapshots:
+		if not raw_snapshot is Dictionary or not enemy_by_id.has(String((raw_snapshot as Dictionary).get("entity_id", ""))):
+			return false
+	for raw_snapshot: Variant in enemy_snapshots:
+		var entity_snapshot: Dictionary = raw_snapshot as Dictionary
+		var entity: Node = enemy_by_id[String(entity_snapshot["entity_id"])]
+		if not entity.has_method("restore_snapshot"):
+			return false
+	if not player_state.is_empty() and not bool(player.call("restore_snapshot", player_state)):
+		return false
+	for raw_snapshot: Variant in enemy_snapshots:
+		var entity_snapshot: Dictionary = raw_snapshot as Dictionary
+		var entity: Node = enemy_by_id[String(entity_snapshot["entity_id"])]
+		if not bool(entity.call("restore_snapshot", entity_snapshot)):
+			return false
+	var interaction_state: Dictionary = _pending_scene_state.get("interaction_state", {}) as Dictionary
+	var collected_ids: Array = interaction_state.get("escape_material_ids", []) as Array
+	for node: Node in _get_scene_group_nodes(scene, "snapshot_escape_material"):
+		if collected_ids.has(node.name):
+			node.queue_free()
+	for node: Node in _get_scene_group_nodes(scene, "snapshot_suppression_component"):
+		if (interaction_state.get("suppression_component_ids", []) as Array).has(node.name):
+			node.visible = false
+			node.set_process(false)
+	for node: Node in _get_scene_group_nodes(scene, "snapshot_environment_device"):
+		if (interaction_state.get("environment_device_ids", []) as Array).has(node.name):
+			node.modulate = Color(0.35, 1.0, 0.65, 1.0)
+	_pending_scene_state.clear()
+	return true
+
+
+func _validate_entity_snapshot(snapshot: Dictionary, require_entity_id: bool) -> bool:
+	if snapshot.is_empty():
+		return true
+	if require_entity_id and String(snapshot.get("entity_id", "")).is_empty():
+		return false
+	return snapshot.has("position") and snapshot.has("health")
+
+
+func _validate_enemy_snapshot(snapshot: Dictionary) -> bool:
+	if snapshot.is_empty():
+		return true
+	if not snapshot.has("entities") or typeof(snapshot["entities"]) != TYPE_ARRAY:
+		return false
+	for raw_snapshot: Variant in snapshot["entities"]:
+		if not raw_snapshot is Dictionary or not _validate_entity_snapshot(raw_snapshot as Dictionary, true):
+			return false
+	return true
+
+
+func _validate_interaction_snapshot(snapshot: Dictionary) -> bool:
+	if snapshot.is_empty():
+		return true
+	for key: String in ["escape_material_ids", "suppression_component_ids", "environment_device_ids"]:
+		if snapshot.has(key) and typeof(snapshot[key]) != TYPE_ARRAY:
+			return false
+	return true
+
+
+func _validate_building_snapshot(snapshot: Dictionary) -> bool:
+	return snapshot.has("entities") and typeof(snapshot["entities"]) == TYPE_ARRAY
+
+
+func _create_building_snapshot(_scene: Node) -> Dictionary:
+	return {"entities": []}
+
+
+func _create_interaction_snapshot(scene: Node) -> Dictionary:
+	var suppression_ids: Array[String] = []
+	var device_ids: Array[String] = []
+	if scene != null:
+		for node: Node in _get_scene_group_nodes(scene, "snapshot_suppression_component"):
+			if not node.visible:
+				suppression_ids.append(node.name)
+		for node: Node in _get_scene_group_nodes(scene, "snapshot_environment_device"):
+			if node.modulate.is_equal_approx(Color(0.35, 1.0, 0.65, 1.0)):
+				device_ids.append(node.name)
+	return {
+		"escape_material_ids": _collected_escape_material_ids.duplicate(),
+		"suppression_component_ids": suppression_ids,
+		"environment_device_ids": device_ids,
+	}
+
+
+func _load_meta_progression() -> void:
+	if not FileAccess.file_exists(META_SAVE_PATH):
+		return
+	var file := FileAccess.open(META_SAVE_PATH, FileAccess.READ)
+	if file == null:
+		return
+	var parser := JSON.new()
+	if parser.parse(file.get_as_text()) == OK and parser.data is Dictionary:
+		if _meta_progression == null:
+			_meta_progression = META_PROGRESSION_MODEL_SCRIPT.new()
+		_meta_progression.restore_snapshot(parser.data as Dictionary)
+		_meta_crystals = _meta_progression.get_crystals()
+	file.close()
+
+
+func _save_meta_progression() -> void:
+	var file := FileAccess.open(META_SAVE_PATH, FileAccess.WRITE)
+	if file == null:
+		return
+	var snapshot: Dictionary = _meta_progression.create_snapshot() if _meta_progression != null else {"meta_crystals": _meta_crystals}
+	snapshot["schema_version"] = 1
+	file.store_string(JSON.stringify(snapshot))
+	file.close()
+
+
+func _apply_equipped_initial_buff() -> void:
+	if _meta_progression == null or _run_build == null:
+		return
+	var buff_id: StringName = _meta_progression.get_equipped_initial_buff()
+	var level: int = _meta_progression.get_initial_buff_level(buff_id)
+	if buff_id.is_empty() or level <= 0:
+		return
+	var effect_type: int = UPGRADE_DEFINITION_SCRIPT.EffectType.DAMAGE_MULTIPLIER
+	var amount: float = 0.1
+	match buff_id:
+		&"speed", &"move_speed":
+			effect_type = UPGRADE_DEFINITION_SCRIPT.EffectType.MOVE_SPEED_MULTIPLIER
+			amount = 0.06
+		&"vitality":
+			effect_type = UPGRADE_DEFINITION_SCRIPT.EffectType.MAX_STAMINA_MULTIPLIER
+			amount = 0.10
+		&"max_stamina":
+			effect_type = UPGRADE_DEFINITION_SCRIPT.EffectType.MAX_STAMINA_MULTIPLIER
+			amount = 0.15
+		&"stamina_regen":
+			effect_type = UPGRADE_DEFINITION_SCRIPT.EffectType.STAMINA_REGEN_MULTIPLIER
+			amount = 0.20
+		&"survival_efficiency":
+			effect_type = UPGRADE_DEFINITION_SCRIPT.EffectType.SURVIVAL_CONSUMPTION_MULTIPLIER
+			amount = 0.10
+		&"luck":
+			effect_type = UPGRADE_DEFINITION_SCRIPT.EffectType.LUCK
+			amount = 0.10
+	if _run_build.apply_effect(effect_type, amount, buff_id, level):
+		for _index: int in range(level):
+			_run_buff_draft.apply_candidate(buff_id, amount)
+
+
+func _emit_meta_progression_changed() -> void:
+	if _meta_progression == null:
+		return
+	meta_progression_changed.emit(
+		_meta_progression.get_crystals(),
+		_meta_progression.get_equipped_initial_buff(),
+		_meta_progression.get_reroll_level()
+	)
+
+
+func _get_scene_group_nodes(scene: Node, group_name: StringName) -> Array[Node]:
+	var nodes: Array[Node] = []
+	if scene == null:
+		return nodes
+	for node: Node in get_tree().get_nodes_in_group(group_name):
+		if scene.is_ancestor_of(node):
+			nodes.append(node)
+	return nodes
+
+
+func _emit_all_runtime_state() -> void:
+	_emit_run_state_changed()
+	_emit_run_reward_changed()
+	_emit_run_build_changed()
+	_emit_survival_changed()
+	_emit_escape_objective_changed()
+	_emit_disaster_changed()
+	_emit_boss_progress_changed()
 
 
 ## 当前是否可以传送（供 TransitionZone 检查）

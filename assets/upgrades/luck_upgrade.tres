@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_definition.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"luck"
+display_name = "幸运"
+description = "本局幸运提高，后续高品质 Buff 更容易出现。"
+effect_type = 7
+amount = 0.1

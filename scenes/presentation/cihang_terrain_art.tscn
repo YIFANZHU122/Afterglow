@@ -1,0 +1,99 @@
+[gd_scene format=3]
+
+[node name="CihangTerrainArt" type="Node2D"]
+z_index = -8
+
+[node name="BaseGround" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(40, 40, 5720, 40, 5720, 3200, 40, 3200)
+color = Color(0.19, 0.24, 0.17, 1)
+
+[node name="Grassland" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(40, 40, 2200, 40, 2200, 3200, 40, 3200)
+color = Color(0.22, 0.3, 0.16, 1)
+
+[node name="DeadForest" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1900, 40, 4300, 40, 4300, 3200, 1900, 3200)
+color = Color(0.18, 0.23, 0.17, 1)
+
+[node name="DesertRuins" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(4000, 40, 5720, 40, 5720, 3200, 4000, 3200)
+color = Color(0.46, 0.38, 0.23, 1)
+
+[node name="GrassForestTransition" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1750, 40, 2350, 40, 2350, 3200, 1750, 3200)
+color = Color(0.2, 0.27, 0.16, 0.72)
+
+[node name="ForestDesertTransition" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(3850, 40, 4450, 40, 4450, 3200, 3850, 3200)
+color = Color(0.31, 0.29, 0.2, 0.72)
+
+[node name="NorthRoute" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(40, 520, 5720, 520, 5720, 680, 40, 680)
+color = Color(0.31, 0.28, 0.2, 0.9)
+
+[node name="NorthRouteEdge" type="Line2D" parent="."]
+points = PackedVector2Array(40, 520, 5720, 520)
+width = 5.0
+default_color = Color(0.5, 0.42, 0.25, 0.72)
+
+[node name="NorthRouteEdgeLower" type="Line2D" parent="."]
+points = PackedVector2Array(40, 680, 5720, 680)
+width = 5.0
+default_color = Color(0.12, 0.14, 0.12, 0.65)
+
+[node name="SouthRoute" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(40, 2600, 5720, 2600, 5720, 2760, 40, 2760)
+color = Color(0.3, 0.27, 0.19, 0.9)
+
+[node name="SouthRouteEdge" type="Line2D" parent="."]
+points = PackedVector2Array(40, 2600, 5720, 2600)
+width = 5.0
+default_color = Color(0.5, 0.42, 0.25, 0.72)
+
+[node name="SouthRouteEdgeLower" type="Line2D" parent="."]
+points = PackedVector2Array(40, 2760, 5720, 2760)
+width = 5.0
+default_color = Color(0.12, 0.14, 0.12, 0.65)
+
+[node name="GrassTufts" type="Line2D" parent="."]
+points = PackedVector2Array(160, 940, 170, 900, 180, 940, 230, 1010, 240, 965, 250, 1010, 760, 480, 770, 430, 780, 480, 1320, 2280, 1330, 2230, 1340, 2280, 1760, 860, 1770, 810, 1780, 860, 2050, 2050, 2060, 2000, 2070, 2050)
+width = 7.0
+default_color = Color(0.46, 0.52, 0.26, 0.65)
+
+[node name="ForestMistBand" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(2200, 850, 2550, 760, 2900, 820, 3250, 740, 3600, 830, 3950, 770, 4300, 860, 4300, 1040, 3950, 950, 3600, 1010, 3250, 930, 2900, 1010, 2550, 940, 2200, 1040)
+color = Color(0.35, 0.4, 0.3, 0.22)
+
+[node name="ForestUnderbrush" type="Line2D" parent="."]
+points = PackedVector2Array(2280, 1160, 2440, 1110, 2580, 1170, 2720, 1100, 2880, 1180, 3040, 1110, 3200, 1180, 3360, 1100, 3520, 1170, 3680, 1100, 3840, 1180, 4000, 1120, 4180, 1180)
+width = 18.0
+default_color = Color(0.1, 0.15, 0.11, 0.68)
+
+[node name="DuneBand" type="Line2D" parent="."]
+points = PackedVector2Array(4080, 880, 4300, 820, 4520, 900, 4740, 840, 4960, 910, 5180, 850, 5400, 920, 5650, 850)
+width = 34.0
+default_color = Color(0.64, 0.5, 0.28, 0.52)
+
+[node name="DuneBandLower" type="Line2D" parent="."]
+points = PackedVector2Array(4080, 2240, 4300, 2180, 4520, 2260, 4740, 2200, 4960, 2280, 5180, 2210, 5400, 2290, 5650, 2220)
+width = 42.0
+default_color = Color(0.55, 0.42, 0.24, 0.5)
+
+[node name="RuinStripe" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(4380, 1320, 5100, 1320, 5100, 1380, 4380, 1380)
+color = Color(0.25, 0.18, 0.14, 0.82)
+
+[node name="RuinStripeCracks" type="Line2D" parent="."]
+points = PackedVector2Array(4420, 1320, 4490, 1380, 4580, 1320, 4670, 1380, 4760, 1320, 4850, 1380, 4940, 1320, 5030, 1380)
+width = 6.0
+default_color = Color(0.62, 0.35, 0.18, 0.75)
+
+[node name="DebrisFieldNorth" type="Line2D" parent="."]
+points = PackedVector2Array(4700, 420, 4770, 390, 4840, 430, 4910, 390, 4980, 430, 5050, 400, 5120, 440, 5190, 405, 5260, 445)
+width = 14.0
+default_color = Color(0.26, 0.2, 0.16, 0.72)
+
+[node name="DebrisFieldSouth" type="Line2D" parent="."]
+points = PackedVector2Array(4500, 2870, 4580, 2820, 4660, 2880, 4740, 2830, 4820, 2890, 4900, 2840, 4980, 2900, 5060, 2850, 5140, 2910, 5220, 2860)
+width = 16.0
+default_color = Color(0.23, 0.18, 0.14, 0.78)

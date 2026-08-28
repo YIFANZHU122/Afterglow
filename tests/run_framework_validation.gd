@@ -5,6 +5,10 @@ const CONTENT_VALIDATION_MODEL_SCRIPT: Script = preload("res://scripts/data/cont
 const BASEMENT_AREA_PATH := "res://assets/areas/basement_area.tres"
 const DAMAGE_UPGRADE_PATH := "res://assets/upgrades/damage_upgrade.tres"
 const MOVE_SPEED_UPGRADE_PATH := "res://assets/upgrades/move_speed_upgrade.tres"
+const MAX_STAMINA_UPGRADE_PATH := "res://assets/upgrades/max_stamina_upgrade.tres"
+const STAMINA_REGEN_UPGRADE_PATH := "res://assets/upgrades/stamina_regen_upgrade.tres"
+const SURVIVAL_EFFICIENCY_UPGRADE_PATH := "res://assets/upgrades/survival_efficiency_upgrade.tres"
+const LUCK_UPGRADE_PATH := "res://assets/upgrades/luck_upgrade.tres"
 
 var _failures: int = 0
 var _validator: RefCounted
@@ -15,6 +19,10 @@ func _init() -> void:
 	_validate_area(BASEMENT_AREA_PATH)
 	_validate_upgrade(DAMAGE_UPGRADE_PATH)
 	_validate_upgrade(MOVE_SPEED_UPGRADE_PATH)
+	_validate_upgrade(MAX_STAMINA_UPGRADE_PATH)
+	_validate_upgrade(STAMINA_REGEN_UPGRADE_PATH)
+	_validate_upgrade(SURVIVAL_EFFICIENCY_UPGRADE_PATH)
+	_validate_upgrade(LUCK_UPGRADE_PATH)
 	if _failures == 0:
 		print("Framework validation passed")
 	else:

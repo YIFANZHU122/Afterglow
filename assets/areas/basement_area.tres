@@ -9,12 +9,12 @@
 [sub_resource type="Resource" id="Resource_spawn_dummy"]
 script = ExtResource("1_spawn_definition")
 entity_scene = ExtResource("4_dummy_scene")
-spawn_position = Vector2(1000, 550)
+spawn_position = Vector2(1500, 860)
 
 [sub_resource type="Resource" id="Resource_spawn_chaser"]
 script = ExtResource("1_spawn_definition")
 entity_scene = ExtResource("5_chaser_scene")
-spawn_position = Vector2(760, 360)
+spawn_position = Vector2(1100, 520)
 
 [sub_resource type="Resource" id="Resource_encounter"]
 script = ExtResource("2_encounter_definition")

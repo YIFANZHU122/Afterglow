@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_definition.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"max_stamina"
+display_name = "活力"
+description = "最大体力提高 15%。"
+effect_type = 4
+amount = 0.15

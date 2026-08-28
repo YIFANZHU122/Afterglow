@@ -74,3 +74,15 @@ func drop_all() -> Array:
 	var dropped: Array = _model.drop_all()
 	inventory_changed.emit(_model.get_items())
 	return dropped
+
+
+func create_snapshot() -> Dictionary:
+	return _model.create_snapshot() if _model != null else {}
+
+
+func restore_snapshot(snapshot: Dictionary) -> bool:
+	if _model == null or not _model.restore_snapshot(snapshot):
+		return false
+	inventory_changed.emit(_model.get_items())
+	selected_slot_changed.emit(_model.get_selected_slot())
+	return true

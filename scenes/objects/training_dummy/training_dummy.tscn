@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/objects/training_dummy/training_dummy.gd" id="1_dummy_script"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_hc_script"]
 [ext_resource type="PackedScene" path="res://scenes/objects/bullet/bullet.tscn" id="3_bullet_scene"]
 [ext_resource type="Script" path="res://scripts/combat/encounter_member.gd" id="4_encounter_member"]
+[ext_resource type="Script" path="res://scripts/presentation/graybox_actor_presenter.gd" id="5_presenter"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dummy"]
 size = Vector2(40, 60)
@@ -22,7 +23,7 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[node name="TrainingDummy" type="StaticBody2D"]
+[node name="TrainingDummy" type="StaticBody2D" groups=["enemy"]]
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("1_dummy_script")
@@ -31,6 +32,10 @@ bullet_scene = ExtResource("3_bullet_scene")
 [node name="Visual" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-20, -30, 20, -30, 20, 30, -20, 30)
 color = Color(0.65, 0.5, 0.35, 1)
+
+[node name="Presenter" type="Node" parent="."]
+script = ExtResource("5_presenter")
+visual_path = NodePath("../Visual")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_dummy")

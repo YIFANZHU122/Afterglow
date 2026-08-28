@@ -41,3 +41,21 @@ func reset() -> bool:
 	_xp = 0
 	_level = 1
 	return changed
+
+
+func create_snapshot() -> Dictionary:
+	return {"xp_per_level": _xp_per_level, "xp": _xp, "level": _level}
+
+
+func restore_snapshot(snapshot: Dictionary) -> bool:
+	if not snapshot.has("xp_per_level") or not snapshot.has("xp") or not snapshot.has("level"):
+		return false
+	var threshold: int = int(snapshot["xp_per_level"])
+	var xp: int = int(snapshot["xp"])
+	var level: int = int(snapshot["level"])
+	if threshold < 1 or xp < 0 or xp >= threshold or level < 1:
+		return false
+	_xp_per_level = threshold
+	_xp = xp
+	_level = level
+	return true

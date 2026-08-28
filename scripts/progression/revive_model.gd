@@ -43,3 +43,17 @@ func is_dead() -> bool:
 
 func get_state() -> State:
 	return _state
+
+
+func create_snapshot() -> Dictionary:
+	return {"state": int(_state)}
+
+
+func restore_snapshot(snapshot: Dictionary) -> bool:
+	if not snapshot.has("state"):
+		return false
+	var state: int = int(snapshot["state"])
+	if state < State.ALIVE or state > State.WAITING:
+		return false
+	_state = state as State
+	return true

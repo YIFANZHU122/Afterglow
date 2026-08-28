@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/combat/chaser_enemy.gd" id="1_enemy_script"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_health_script"]
 [ext_resource type="Script" path="res://scripts/combat/encounter_member.gd" id="3_encounter_member"]
-[ext_resource type="Script" path="res://scripts/presentation/graybox_actor_presenter.gd" id="4_presenter"]
+[ext_resource type="Script" path="res://scripts/presentation/rift_animal_presenter.gd" id="4_presenter"]
+[ext_resource type="Texture2D" path="res://assets/art/animals/rift_animal.svg" id="5_rift_texture"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 radius = 22.0
@@ -15,7 +16,7 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[node name="ChaserEnemy" type="CharacterBody2D"]
+[node name="ChaserEnemy" type="CharacterBody2D" groups=["enemy"]]
 collision_layer = 2
 collision_mask = 1
 script = ExtResource("1_enemy_script")
@@ -24,9 +25,13 @@ script = ExtResource("1_enemy_script")
 polygon = PackedVector2Array(0, -24, 20, -10, 24, 14, 0, 24, -24, 14, -20, -10)
 color = Color(0.75, 0.2, 0.25, 1)
 
-[node name="Presenter" type="Node" parent="."]
+[node name="Presenter" type="Node2D" parent="."]
 script = ExtResource("4_presenter")
 visual_path = NodePath("../Visual")
+
+[node name="RiftSprite" type="Sprite2D" parent="Presenter"]
+texture = ExtResource("5_rift_texture")
+scale = Vector2(0.52, 0.52)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_enemy")

@@ -1,0 +1,127 @@
+[gd_scene format=3]
+
+[node name="BasementArt" type="Node2D"]
+z_index = -5
+
+[node name="Floor" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(40, 80, 1240, 80, 1240, 680, 40, 680)
+color = Color(0.13, 0.15, 0.19, 1)
+
+[node name="FloorInset" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(60, 170, 1220, 170, 1220, 680, 60, 680)
+color = Color(0.18, 0.19, 0.22, 1)
+
+[node name="BackWall" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(40, 40, 1240, 40, 1240, 178, 40, 178)
+color = Color(0.08, 0.09, 0.13, 1)
+
+[node name="BackWallBand" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(40, 160, 1240, 160, 1240, 178, 40, 178)
+color = Color(0.37, 0.22, 0.16, 1)
+
+[node name="FloorSeam" type="Line2D" parent="."]
+points = PackedVector2Array(60, 470, 1220, 470)
+width = 3.0
+default_color = Color(0.34, 0.35, 0.39, 0.8)
+
+[node name="FloorSeamLower" type="Line2D" parent="."]
+points = PackedVector2Array(60, 610, 1220, 610)
+width = 2.0
+default_color = Color(0.1, 0.11, 0.14, 0.9)
+
+[node name="LeftPanel" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(90, 220, 300, 220, 300, 420, 90, 420)
+color = Color(0.12, 0.14, 0.18, 1)
+
+[node name="LeftPanelInset" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(108, 244, 282, 244, 282, 398, 108, 398)
+color = Color(0.08, 0.1, 0.14, 1)
+
+[node name="CenterPanel" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(430, 204, 850, 204, 850, 392, 430, 392)
+color = Color(0.12, 0.13, 0.17, 1)
+
+[node name="CenterPanelInset" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(455, 230, 825, 230, 825, 366, 455, 366)
+color = Color(0.08, 0.09, 0.12, 1)
+
+[node name="RightPanel" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(930, 210, 1180, 210, 1180, 430, 930, 430)
+color = Color(0.13, 0.13, 0.16, 1)
+
+[node name="RightPanelInset" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(950, 238, 1160, 238, 1160, 402, 950, 402)
+color = Color(0.1, 0.1, 0.13, 1)
+
+[node name="PanelDividerLeft" type="Line2D" parent="."]
+points = PackedVector2Array(320, 190, 320, 450)
+width = 5.0
+default_color = Color(0.31, 0.33, 0.37, 0.8)
+
+[node name="PanelDividerRight" type="Line2D" parent="."]
+points = PackedVector2Array(900, 190, 900, 450)
+width = 5.0
+default_color = Color(0.31, 0.33, 0.37, 0.8)
+
+[node name="PipeTop" type="Line2D" parent="."]
+points = PackedVector2Array(70, 106, 370, 106, 410, 132, 870, 132, 920, 106, 1210, 106)
+width = 8.0
+default_color = Color(0.42, 0.44, 0.48, 1)
+
+[node name="PipeTopHighlight" type="Line2D" parent="."]
+points = PackedVector2Array(70, 102, 370, 102, 410, 128, 870, 128, 920, 102, 1210, 102)
+width = 2.0
+default_color = Color(0.67, 0.69, 0.7, 0.8)
+
+[node name="PipeLeft" type="Line2D" parent="."]
+points = PackedVector2Array(112, 178, 112, 520, 160, 560, 310, 560)
+width = 7.0
+default_color = Color(0.29, 0.31, 0.35, 1)
+
+[node name="PipeRight" type="Line2D" parent="."]
+points = PackedVector2Array(1160, 178, 1160, 520, 1110, 560, 960, 560)
+width = 7.0
+default_color = Color(0.29, 0.31, 0.35, 1)
+
+[node name="CableBundle" type="Line2D" parent="."]
+points = PackedVector2Array(350, 178, 350, 260, 410, 300, 410, 470, 870, 470, 870, 300, 930, 260, 930, 178)
+width = 4.0
+default_color = Color(0.18, 0.2, 0.25, 1)
+
+[node name="LampLeft" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(150, 72, 215, 72, 227, 86, 138, 86)
+color = Color(0.84, 0.62, 0.27, 0.9)
+
+[node name="LampCenter" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(605, 72, 675, 72, 687, 86, 593, 86)
+color = Color(0.84, 0.62, 0.27, 0.9)
+
+[node name="LampRight" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1065, 72, 1130, 72, 1142, 86, 1053, 86)
+color = Color(0.84, 0.62, 0.27, 0.9)
+
+[node name="WarningStripe" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(470, 408, 810, 408, 792, 432, 488, 432)
+color = Color(0.66, 0.35, 0.17, 0.9)
+
+[node name="WarningStripeDark" type="Line2D" parent="."]
+points = PackedVector2Array(500, 408, 520, 432, 560, 408, 580, 432, 620, 408, 640, 432, 680, 408, 700, 432, 740, 408, 760, 432)
+width = 6.0
+default_color = Color(0.08, 0.08, 0.1, 0.95)
+
+[node name="Vent" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(525, 520, 755, 520, 755, 585, 525, 585)
+color = Color(0.09, 0.1, 0.13, 1)
+
+[node name="VentSlats" type="Line2D" parent="."]
+points = PackedVector2Array(550, 535, 550, 570, 585, 535, 585, 570, 620, 535, 620, 570, 655, 535, 655, 570, 690, 535, 690, 570, 725, 535, 725, 570)
+width = 4.0
+default_color = Color(0.36, 0.38, 0.42, 0.9)
+
+[node name="DebrisLeft" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(170, 600, 245, 600, 265, 630, 150, 630)
+color = Color(0.28, 0.24, 0.22, 1)
+
+[node name="DebrisRight" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1010, 610, 1080, 590, 1140, 620, 1110, 642, 1030, 640)
+color = Color(0.27, 0.23, 0.22, 1)

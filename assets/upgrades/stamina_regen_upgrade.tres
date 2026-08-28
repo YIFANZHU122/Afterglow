@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_definition.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"stamina_regen"
+display_name = "呼吸"
+description = "体力恢复速度提高 20%。"
+effect_type = 5
+amount = 0.2
