@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/objects/environment_device/environment_device.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_device"]
+size = Vector2(72, 48)
+
+[node name="EnvironmentDevice" type="Area2D"]
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_device")
+
+[node name="Visual" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-24, -12, 24, -12, 24, 12, -24, 12)
+color = Color(0.85, 0.55, 0.25, 1)

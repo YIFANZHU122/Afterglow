@@ -1,0 +1,216 @@
+[gd_scene load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://scripts/presentation/world_environment_presenter.gd" id="1_presenter_script"]
+[ext_resource type="Texture2D" path="res://assets/art/weather/fog_animation.png" id="2_fog_texture"]
+[ext_resource type="Texture2D" path="res://assets/art/weather/dust_particle.png" id="3_dust_texture"]
+[ext_resource type="Texture2D" path="res://assets/art/weather/rain_streak.png" id="4_rain_texture"]
+[ext_resource type="Texture2D" path="res://assets/art/weather/smoke_particle.png" id="5_smoke_texture"]
+[ext_resource type="Texture2D" path="res://assets/art/moon/moon_00_new.png" id="7_moon_00"]
+
+[sub_resource type="Gradient" id="Gradient_sky"]
+colors = PackedColorArray(0.08, 0.12, 0.2, 1, 0.38, 0.28, 0.18, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sky"]
+gradient = SubResource("Gradient_sky")
+width = 1280
+height = 720
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+
+[sub_resource type="Shader" id="Shader_heat_haze"]
+code = "shader_type canvas_item; uniform sampler2D screen_texture : hint_screen_texture, filter_linear_mipmap; void fragment(){ vec2 uv=SCREEN_UV; uv.x += sin(uv.y*32.0+TIME*2.0)*0.003; vec4 scene=texture(screen_texture,uv); COLOR=vec4(scene.rgb,0.12); }"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_heat_haze"]
+shader = SubResource("Shader_heat_haze")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_rain"]
+emission_shape = 3
+emission_sphere_radius = 640.0
+emission_box_extents = Vector3(640, 24, 0)
+direction = Vector3(0.18, 1, 0)
+spread = 12.0
+gravity = Vector3(0, 16, 0)
+initial_velocity_min = 90.0
+initial_velocity_max = 150.0
+scale_min = 0.05
+scale_max = 0.1
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dust"]
+emission_shape = 3
+emission_sphere_radius = 620.0
+emission_box_extents = Vector3(640, 24, 0)
+direction = Vector3(-0.15, -0.1, 0)
+spread = 180.0
+gravity = Vector3(0, -2, 0)
+initial_velocity_min = 4.0
+initial_velocity_max = 12.0
+scale_min = 0.04
+scale_max = 0.12
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_frost"]
+emission_shape = 3
+emission_sphere_radius = 620.0
+emission_box_extents = Vector3(640, 24, 0)
+direction = Vector3(0, 1, 0)
+spread = 22.0
+gravity = Vector3(0, 5, 0)
+initial_velocity_min = 10.0
+initial_velocity_max = 24.0
+scale_min = 0.035
+scale_max = 0.09
+
+[node name="WorldEnvironmentPresenter" type="Node2D"]
+script = ExtResource("1_presenter_script")
+
+[node name="EnvironmentCanvas" type="CanvasLayer" parent="."]
+layer = 0
+
+[node name="SkyCanvas" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="SkyLayer" type="TextureRect" parent="SkyCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_sky")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0.18)
+z_index = -20
+
+[node name="HorizonGlow" type="ColorRect" parent="SkyCanvas"]
+offset_top = 430.0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.46, 0.29, 0.18, 0.28)
+modulate = Color(1, 1, 1, 0.45)
+z_index = -19
+
+[node name="WastelandSilhouette" type="Polygon2D" parent="SkyCanvas"]
+visible = false
+polygon = PackedVector2Array(0, 560, 140, 500, 240, 540, 350, 470, 470, 520, 600, 455, 740, 520, 880, 465, 1000, 530, 1140, 470, 1280, 520, 1280, 720, 0, 720)
+color = Color(0.05, 0.06, 0.08, 0.66)
+modulate = Color(1, 1, 1, 0.32)
+z_index = -18
+
+[node name="DayNightTint" type="ColorRect" parent="EnvironmentCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.92, 0.84, 0.62, 0)
+
+[node name="WeatherTint" type="ColorRect" parent="EnvironmentCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="HeatHaze" type="TextureRect" parent="EnvironmentCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_sky")
+material = SubResource("ShaderMaterial_heat_haze")
+modulate = Color(1, 0.62, 0.22, 0)
+visible = false
+
+[node name="FrostEdge" type="ColorRect" parent="EnvironmentCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.72, 0.88, 1, 0.0)
+visible = false
+
+[node name="PostProcessLayer" type="ColorRect" parent="EnvironmentCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.2, 0.32, 0.42, 0.0)
+visible = false
+
+[node name="AnomalyMoon" type="ColorRect" parent="EnvironmentCanvas"]
+offset_left = 1088.0
+offset_top = 94.0
+offset_right = 1180.0
+offset_bottom = 186.0
+mouse_filter = 2
+color = Color(0.62, 0.18, 0.36, 0.0)
+visible = false
+
+[node name="PollutionSky" type="ColorRect" parent="EnvironmentCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.3, 0.48, 0.2, 0.0)
+visible = false
+
+[node name="CelestialRift" type="Polygon2D" parent="EnvironmentCanvas"]
+polygon = PackedVector2Array(600, 40, 650, 300, 630, 680, 690, 680, 670, 300, 720, 40)
+color = Color(0.6, 0.12, 0.38, 0.0)
+visible = false
+
+[node name="SanVignette" type="ColorRect" parent="EnvironmentCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.36, 0.05, 0.16, 0.0)
+visible = false
+
+[node name="FogLayer" type="TextureRect" parent="EnvironmentCanvas"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture = ExtResource("2_fog_texture")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0)
+
+[node name="MoonSprite" type="Sprite2D" parent="EnvironmentCanvas"]
+position = Vector2(1120, 126)
+scale = Vector2(0.34, 0.34)
+modulate = Color(0.94, 0.88, 0.7, 0.9)
+texture = ExtResource("7_moon_00")
+
+[node name="DustLayer" type="GPUParticles2D" parent="EnvironmentCanvas"]
+position = Vector2(640, 360)
+amount = 28
+lifetime = 7.0
+randomness = 0.55
+visibility_rect = Rect2(-700, -300, 1400, 1100)
+process_material = SubResource("ParticleProcessMaterial_dust")
+texture = ExtResource("3_dust_texture")
+visible = false
+emitting = false
+
+[node name="RainLayer" type="GPUParticles2D" parent="EnvironmentCanvas"]
+position = Vector2(640, 10)
+amount = 80
+lifetime = 2.2
+randomness = 0.35
+visibility_rect = Rect2(-700, -300, 1400, 1100)
+process_material = SubResource("ParticleProcessMaterial_rain")
+texture = ExtResource("4_rain_texture")
+visible = false
+emitting = false
+
+[node name="ParticleLayer" type="GPUParticles2D" parent="EnvironmentCanvas"]
+position = Vector2(640, 10)
+amount = 34
+lifetime = 6.0
+randomness = 0.45
+visibility_rect = Rect2(-700, -300, 1400, 1100)
+process_material = SubResource("ParticleProcessMaterial_frost")
+texture = ExtResource("5_smoke_texture")
+visible = false
+emitting = false
+
+[node name="WeatherAudio" type="AudioStreamPlayer" parent="EnvironmentCanvas"]
+
+[node name="RainAudio" type="AudioStreamPlayer" parent="EnvironmentCanvas"]
+
+[node name="HeatAudio" type="AudioStreamPlayer" parent="EnvironmentCanvas"]
+
+[node name="FogAudio" type="AudioStreamPlayer" parent="EnvironmentCanvas"]
+
+[node name="ColdAudio" type="AudioStreamPlayer" parent="EnvironmentCanvas"]

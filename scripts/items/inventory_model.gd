@@ -71,3 +71,44 @@ func drop_all() -> Array[ItemData]:
 			dropped.append(item)
 	_items.fill(null)
 	return dropped
+
+
+func create_snapshot() -> Dictionary:
+	var item_data: Array[Dictionary] = []
+	for item: ItemData in _items:
+		item_data.append({
+			"id": String(item.id) if item != null else "",
+			"display_name": item.display_name if item != null else "",
+			"item_type": int(item.item_type) if item != null else 0,
+			"attack_damage": item.attack_damage if item != null else 0.0,
+		})
+	return {"slot_count": _slot_count, "selected_slot": _selected_slot, "items": item_data}
+
+
+func restore_snapshot(snapshot: Dictionary) -> bool:
+	if not snapshot.has("slot_count") or not snapshot.has("selected_slot") or not snapshot.has("items"):
+		return false
+	var slot_count: int = int(snapshot["slot_count"])
+	var selected_slot: int = int(snapshot["selected_slot"])
+	var items: Array = snapshot["items"] as Array
+	if slot_count < 0 or selected_slot < 0 or (slot_count > 0 and selected_slot >= slot_count) or items.size() != slot_count:
+		return false
+	_slot_count = slot_count
+	_selected_slot = selected_slot if slot_count > 0 else 0
+	_items.clear()
+	_items.resize(_slot_count)
+	_items.fill(null)
+	for index in range(items.size()):
+		if not items[index] is Dictionary:
+			return false
+		var data: Dictionary = items[index]
+		var id: String = String(data.get("id", ""))
+		if id.is_empty():
+			continue
+		var item := ItemData.new()
+		item.id = StringName(id)
+		item.display_name = String(data.get("display_name", ""))
+		item.item_type = int(data.get("item_type", 0)) as ItemData.ItemType
+		item.attack_damage = float(data.get("attack_damage", 0.0))
+		_items[index] = item
+	return true

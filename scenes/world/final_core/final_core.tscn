@@ -1,0 +1,117 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scenes/world/final_core/final_core.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/combat/boss_core.gd" id="3_boss"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="7_health"]
+[ext_resource type="PackedScene" path="res://scenes/objects/suppression_component/suppression_component.tscn" id="4_component"]
+[ext_resource type="PackedScene" path="res://scenes/objects/environment_device/environment_device.tscn" id="5_device"]
+[ext_resource type="PackedScene" path="res://scenes/objects/final_exit/final_exit.tscn" id="6_exit"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/world_environment_presenter.tscn" id="8_environment_presenter"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/debug_controller.tscn" id="9_debug_controller"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(2560, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
+size = Vector2(40, 1440)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
+radius = 72.0
+
+[node name="FinalCore" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Background" type="Polygon2D" parent="."]
+position = Vector2(1280, 720)
+polygon = PackedVector2Array(-1280, -720, 1280, -720, 1280, 720, -1280, 720)
+color = Color(0.12, 0.08, 0.16, 1)
+
+[node name="WallTop" type="StaticBody2D" parent="."]
+position = Vector2(1280, 20)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallTop"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="WallBottom" type="StaticBody2D" parent="."]
+position = Vector2(1280, 1420)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallBottom"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="WallLeft" type="StaticBody2D" parent="."]
+position = Vector2(20, 720)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="WallRight" type="StaticBody2D" parent="."]
+position = Vector2(2540, 720)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(760, 720)
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(760, 720)
+
+[node name="WorldEnvironmentPresenter" parent="." instance=ExtResource("8_environment_presenter")]
+
+[node name="DebugController" parent="." instance=ExtResource("9_debug_controller")]
+
+[node name="BossCore" type="CharacterBody2D" parent="."]
+position = Vector2(1280, 600)
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("3_boss")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BossCore"]
+shape = SubResource("CircleShape2D_boss")
+
+[node name="Visual" type="Polygon2D" parent="BossCore"]
+polygon = PackedVector2Array(-72, -72, 72, -72, 72, 72, -72, 72)
+color = Color(0.8, 0.18, 0.55, 1)
+
+[node name="HealthComponent" type="Node" parent="BossCore"]
+script = ExtResource("7_health")
+max_health = 300.0
+
+[node name="SuppressionComponent0" parent="." instance=ExtResource("4_component")]
+position = Vector2(920, 420)
+component_index = 0
+
+[node name="SuppressionComponent1" parent="." instance=ExtResource("4_component")]
+position = Vector2(1280, 1040)
+component_index = 1
+
+[node name="SuppressionComponent2" parent="." instance=ExtResource("4_component")]
+position = Vector2(1640, 420)
+component_index = 2
+
+[node name="EnvironmentDevice0" parent="." instance=ExtResource("5_device")]
+position = Vector2(760, 720)
+device_index = 0
+
+[node name="EnvironmentDevice1" parent="." instance=ExtResource("5_device")]
+position = Vector2(1280, 1120)
+device_index = 1
+
+[node name="EnvironmentDevice2" parent="." instance=ExtResource("5_device")]
+position = Vector2(1800, 720)
+device_index = 2
+
+[node name="FinalExit" parent="." instance=ExtResource("6_exit")]
+position = Vector2(2260, 720)
+
+[node name="BossHUD" type="CanvasLayer" parent="."]
+
+[node name="BossLabel" type="Label" parent="BossHUD"]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 520.0
+offset_bottom = 88.0
+theme_override_colors/font_color = Color(1, 0.75, 0.45, 1)
+theme_override_font_sizes/font_size = 20
+text = "终局核心"

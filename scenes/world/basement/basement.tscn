@@ -1,83 +1,184 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/basement/basement.gd" id="1_basement_script"]
 [ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="2_player_scene"]
 [ext_resource type="PackedScene" path="res://scenes/objects/transition_zone/transition_zone.tscn" id="3_tz_scene"]
 [ext_resource type="PackedScene" path="res://scenes/objects/item_world/item_world.tscn" id="4_item_world_scene"]
 [ext_resource type="Resource" path="res://assets/items/stone_sword.tres" id="5_stone_sword_data"]
-[ext_resource type="PackedScene" path="res://scenes/objects/training_dummy/training_dummy.tscn" id="6_dummy_scene"]
+[ext_resource type="Resource" path="res://assets/areas/basement_area.tres" id="6_basement_area"]
+[ext_resource type="Script" path="res://scripts/world/encounter_controller.gd" id="11_encounter_controller"]
+[ext_resource type="PackedScene" path="res://scenes/ui/reward_selection/reward_selection.tscn" id="12_reward_selection"]
+[ext_resource type="PackedScene" path="res://scenes/objects/escape_material_world/escape_material_world.tscn" id="13_escape_material_scene"]
+[ext_resource type="PackedScene" path="res://scenes/objects/signal_suppressor/signal_suppressor.tscn" id="14_signal_suppressor_scene"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/world_environment_presenter.tscn" id="15_environment_presenter_scene"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/basement_art.tscn" id="16_basement_art_scene"]
+[ext_resource type="PackedScene" path="res://scenes/presentation/debug_controller.tscn" id="17_debug_controller_scene"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h"]
-size = Vector2(1280, 40)
+size = Vector2(2560, 40)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_v"]
-size = Vector2(40, 720)
+size = Vector2(40, 1440)
 
 [node name="Basement" type="Node2D"]
 script = ExtResource("1_basement_script")
+area_config = ExtResource("6_basement_area")
 
 [node name="Background" type="Polygon2D" parent="."]
-position = Vector2(640, 360)
-polygon = PackedVector2Array(-640, -360, 640, -360, 640, 360, -640, 360)
-color = Color(0.14, 0.14, 0.2, 1)
+position = Vector2(1280, 720)
+polygon = PackedVector2Array(-1280, -720, 1280, -720, 1280, 720, -1280, 720)
+color = Color(0.07, 0.08, 0.11, 1)
+z_index = -10
 
 [node name="WallTop" type="StaticBody2D" parent="."]
-position = Vector2(640, 20)
+position = Vector2(1280, 20)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WallTop"]
 shape = SubResource("RectangleShape2D_h")
 
 [node name="Visual" type="Polygon2D" parent="WallTop"]
-polygon = PackedVector2Array(-640, -20, 640, -20, 640, 20, -640, 20)
+polygon = PackedVector2Array(-1280, -20, 1280, -20, 1280, 20, -1280, 20)
 color = Color(0.08, 0.08, 0.13, 1)
 
 [node name="WallBottom" type="StaticBody2D" parent="."]
-position = Vector2(640, 700)
+position = Vector2(1280, 1420)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WallBottom"]
 shape = SubResource("RectangleShape2D_h")
 
 [node name="Visual" type="Polygon2D" parent="WallBottom"]
-polygon = PackedVector2Array(-640, -20, 640, -20, 640, 20, -640, 20)
+polygon = PackedVector2Array(-1280, -20, 1280, -20, 1280, 20, -1280, 20)
 color = Color(0.08, 0.08, 0.13, 1)
 
 [node name="WallLeft" type="StaticBody2D" parent="."]
-position = Vector2(20, 360)
+position = Vector2(20, 720)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WallLeft"]
 shape = SubResource("RectangleShape2D_v")
 
 [node name="Visual" type="Polygon2D" parent="WallLeft"]
-polygon = PackedVector2Array(-20, -360, 20, -360, 20, 360, -20, 360)
+polygon = PackedVector2Array(-20, -720, 20, -720, 20, 720, -20, 720)
 color = Color(0.08, 0.08, 0.13, 1)
 
 [node name="WallRight" type="StaticBody2D" parent="."]
-position = Vector2(1260, 360)
+position = Vector2(2540, 720)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WallRight"]
 shape = SubResource("RectangleShape2D_v")
 
 [node name="Visual" type="Polygon2D" parent="WallRight"]
-polygon = PackedVector2Array(-20, -360, 20, -360, 20, 360, -20, 360)
+polygon = PackedVector2Array(-20, -720, 20, -720, 20, 720, -20, 720)
 color = Color(0.08, 0.08, 0.13, 1)
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
-position = Vector2(200, 360)
+position = Vector2(760, 720)
 
 [node name="FromCihangSpawn" type="Marker2D" parent="."]
-position = Vector2(1000, 360)
+position = Vector2(2160, 720)
 
 [node name="TransitionZone" parent="." instance=ExtResource("3_tz_scene")]
-position = Vector2(1150, 360)
+position = Vector2(2340, 720)
 target_scene = "res://scenes/world/cihang_outskirts/cihang_outskirts.tscn"
 spawn_point_name = "FromBasementSpawn"
+requires_objective_complete = true
+requires_escape_startup = true
 
 [node name="Player" parent="." instance=ExtResource("2_player_scene")]
-position = Vector2(200, 360)
+position = Vector2(760, 720)
+
+[node name="BasementArt" parent="." instance=ExtResource("16_basement_art_scene")]
+scale = Vector2(2, 2)
+
+[node name="WorldEnvironmentPresenter" parent="." instance=ExtResource("15_environment_presenter_scene")]
+
+[node name="DebugController" parent="." instance=ExtResource("17_debug_controller_scene")]
+
+[node name="ContentRoot" type="Node2D" parent="."]
+
+[node name="EncounterController" type="Node" parent="."]
+script = ExtResource("11_encounter_controller")
 
 [node name="StoneSword" parent="." instance=ExtResource("4_item_world_scene")]
-position = Vector2(400, 180)
+position = Vector2(960, 520)
 item_data = ExtResource("5_stone_sword_data")
 
-[node name="TrainingDummy" parent="." instance=ExtResource("6_dummy_scene")]
-position = Vector2(1000, 550)
+[node name="EscapeParts0" parent="." instance=ExtResource("13_escape_material_scene")]
+position = Vector2(760, 1080)
+material_type = 0
+
+[node name="EscapeParts4" parent="." instance=ExtResource("13_escape_material_scene")]
+position = Vector2(520, 1040)
+material_type = 0
+
+[node name="EscapeFuel1" parent="." instance=ExtResource("13_escape_material_scene")]
+position = Vector2(1280, 1080)
+material_type = 1
+
+[node name="EscapeFuel5" parent="." instance=ExtResource("13_escape_material_scene")]
+position = Vector2(1280, 360)
+material_type = 1
+
+[node name="EscapeCloth2" parent="." instance=ExtResource("13_escape_material_scene")]
+position = Vector2(1800, 1080)
+material_type = 2
+
+[node name="EscapeCloth6" parent="." instance=ExtResource("13_escape_material_scene")]
+position = Vector2(1800, 360)
+material_type = 2
+
+[node name="EscapeKey3" parent="." instance=ExtResource("13_escape_material_scene")]
+position = Vector2(2160, 360)
+material_type = 3
+
+[node name="SignalSuppressor" parent="." instance=ExtResource("14_signal_suppressor_scene")]
+position = Vector2(2160, 560)
+
+[node name="ObjectiveHUD" type="CanvasLayer" parent="."]
+
+[node name="ObjectiveStack" type="VBoxContainer" parent="ObjectiveHUD"]
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -8.0
+offset_bottom = -16.0
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="ObjectiveLabel" type="Label" parent="ObjectiveHUD/ObjectiveStack"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.9, 0.65, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "区域目标  0/2  击败全部敌人"
+autowrap_mode = 2
+fit_content = true
+
+[node name="EscapeLabel" type="Label" parent="ObjectiveHUD/ObjectiveStack"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.55, 0.9, 0.85, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+text = "逃生物资  零件 0/2  燃料 0/2  布料 0/2  钥匙 0/1\n出口启动 0.0/10.0 秒  收集物资"
+autowrap_mode = 2
+fit_content = true
+
+[node name="DisasterLabel" type="Label" parent="ObjectiveHUD/ObjectiveStack"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.55, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+text = "灾难  无"
+autowrap_mode = 2
+fit_content = true
+
+[node name="RewardSelection" parent="." instance=ExtResource("12_reward_selection")]

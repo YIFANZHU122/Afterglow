@@ -1,0 +1,294 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/flow/start_screen.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_background"]
+bg_color = Color(0.035, 0.045, 0.07, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.075, 0.09, 0.13, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.45, 0.5, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+bg_color = Color(0.12, 0.2, 0.24, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.58, 0.58, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 18.0
+content_margin_right = 18.0
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+bg_color = Color(0.2, 0.34, 0.35, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.56, 0.86, 0.76, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 18.0
+content_margin_right = 18.0
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_disabled"]
+bg_color = Color(0.09, 0.11, 0.13, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.24, 0.25, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_separator"]
+bg_color = Color(0.3, 0.55, 0.55, 0.55)
+
+[node name="StartScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_background")
+mouse_filter = 2
+
+[node name="Header" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 78.0
+offset_bottom = 190.0
+grow_horizontal = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.95, 0.88, 1)
+theme_override_font_sizes/font_size = 44
+text = "AFTERGLOW"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.68, 0.68, 1)
+theme_override_font_sizes/font_size = 16
+text = "在资源耗尽之前，找到下一道出口。"
+horizontal_alignment = 1
+
+[node name="Menu" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 430.0
+offset_top = 230.0
+offset_right = 850.0
+offset_bottom = 650.0
+theme_override_constants/separation = 12
+
+[node name="DifficultyLabel" type="Label" parent="Menu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.8, 1)
+text = "难度"
+
+[node name="DifficultyOption" type="OptionButton" parent="Menu"]
+layout_mode = 2
+item_count = 3
+selected = 0
+popup/item_0/text = "普通"
+popup/item_0/id = 0
+popup/item_1/text = "困难"
+popup/item_1/id = 1
+popup/item_2/text = "地狱"
+popup/item_2/id = 2
+
+[node name="Divider" type="HSeparator" parent="Menu"]
+layout_mode = 2
+
+[node name="StartButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "开始游戏"
+
+[node name="ContinueButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
+text = "继续游戏"
+
+[node name="GrowthButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "局外成长"
+
+[node name="QuitButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "退出游戏"
+
+[node name="GrowthPanel" type="Panel" parent="."]
+layout_mode = 0
+offset_left = 350.0
+offset_top = 74.0
+offset_right = 930.0
+offset_bottom = 700.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Title" type="Label" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 552.0
+offset_bottom = 58.0
+theme_override_colors/font_color = Color(0.8, 0.95, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+text = "局外成长"
+horizontal_alignment = 1
+
+[node name="MetaLabel" type="Label" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 78.0
+offset_right = 548.0
+offset_bottom = 144.0
+theme_override_colors/font_color = Color(0.72, 0.86, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+
+[node name="DamageGrowthButton" type="Button" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 166.0
+offset_right = 548.0
+offset_bottom = 212.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "强化 强袭"
+
+[node name="SpeedGrowthButton" type="Button" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 222.0
+offset_right = 548.0
+offset_bottom = 268.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "强化 疾行"
+
+[node name="StaminaGrowthButton" type="Button" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 278.0
+offset_right = 548.0
+offset_bottom = 324.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "强化 活力"
+
+[node name="RegenGrowthButton" type="Button" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 334.0
+offset_right = 548.0
+offset_bottom = 380.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "强化 呼吸"
+
+[node name="SurvivalGrowthButton" type="Button" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 390.0
+offset_right = 548.0
+offset_bottom = 436.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "强化 节制"
+
+[node name="LuckGrowthButton" type="Button" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 446.0
+offset_right = 548.0
+offset_bottom = 492.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "强化 幸运"
+
+[node name="RerollGrowthButton" type="Button" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 502.0
+offset_right = 548.0
+offset_bottom = 548.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "强化刷新"
+
+[node name="Status" type="Label" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 558.0
+offset_right = 548.0
+offset_bottom = 590.0
+theme_override_colors/font_color = Color(1, 0.7, 0.5, 1)
+text = ""
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="GrowthPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 602.0
+offset_right = 548.0
+offset_bottom = 648.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "返回主菜单"

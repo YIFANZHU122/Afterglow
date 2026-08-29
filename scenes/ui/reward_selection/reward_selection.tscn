@@ -1,0 +1,86 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/reward_selection/reward_selection.gd" id="1_script"]
+[ext_resource type="Resource" path="res://assets/upgrades/damage_upgrade.tres" id="2_damage"]
+[ext_resource type="Resource" path="res://assets/upgrades/move_speed_upgrade.tres" id="3_move"]
+[ext_resource type="Resource" path="res://assets/upgrades/max_stamina_upgrade.tres" id="4_stamina"]
+[ext_resource type="Resource" path="res://assets/upgrades/stamina_regen_upgrade.tres" id="5_regen"]
+[ext_resource type="Resource" path="res://assets/upgrades/survival_efficiency_upgrade.tres" id="6_survival"]
+[ext_resource type="Resource" path="res://assets/upgrades/luck_upgrade.tres" id="7_luck"]
+
+[node name="RewardSelection" type="CanvasLayer"]
+script = ExtResource("1_script")
+damage_upgrade = ExtResource("2_damage")
+move_speed_upgrade = ExtResource("3_move")
+max_stamina_upgrade = ExtResource("4_stamina")
+stamina_regen_upgrade = ExtResource("5_regen")
+survival_efficiency_upgrade = ExtResource("6_survival")
+luck_upgrade = ExtResource("7_luck")
+
+[node name="Panel" type="Panel" parent="."]
+offset_left = 90.0
+offset_top = 96.0
+offset_right = 1190.0
+offset_bottom = 626.0
+
+[node name="Title" type="Label" parent="Panel"]
+offset_left = 28.0
+offset_top = 18.0
+offset_right = 1072.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 24
+text = "选择本区域强化"
+horizontal_alignment = 1
+
+[node name="LuckLabel" type="Label" parent="Panel"]
+offset_left = 30.0
+offset_top = 58.0
+offset_right = 1070.0
+offset_bottom = 84.0
+theme_override_colors/font_color = Color(0.74, 0.86, 0.78, 1)
+text = "本局幸运 0.00   可刷新 0 次"
+horizontal_alignment = 1
+
+[node name="Candidate0" type="Button" parent="Panel"]
+offset_left = 28.0
+offset_top = 104.0
+offset_right = 286.0
+offset_bottom = 332.0
+text = "候选 1"
+
+[node name="Candidate1" type="Button" parent="Panel"]
+offset_left = 302.0
+offset_top = 104.0
+offset_right = 560.0
+offset_bottom = 332.0
+text = "候选 2"
+
+[node name="Candidate2" type="Button" parent="Panel"]
+offset_left = 576.0
+offset_top = 104.0
+offset_right = 834.0
+offset_bottom = 332.0
+text = "候选 3"
+
+[node name="Candidate3" type="Button" parent="Panel"]
+offset_left = 850.0
+offset_top = 104.0
+offset_right = 1072.0
+offset_bottom = 332.0
+text = "候选 4"
+
+[node name="BuildLabel" type="Label" parent="Panel"]
+offset_left = 30.0
+offset_top = 362.0
+offset_right = 1070.0
+offset_bottom = 392.0
+theme_override_colors/font_color = Color(0.68, 0.75, 0.76, 1)
+text = "当前构筑  暂无"
+horizontal_alignment = 1
+
+[node name="RerollButton" type="Button" parent="Panel"]
+offset_left = 360.0
+offset_top = 420.0
+offset_right = 740.0
+offset_bottom = 474.0
+text = "刷新候选"
