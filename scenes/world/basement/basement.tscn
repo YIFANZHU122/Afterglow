@@ -1,10 +1,16 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=34 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/basement/basement.gd" id="1_basement_script"]
 [ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="2_player_scene"]
 [ext_resource type="PackedScene" path="res://scenes/objects/transition_zone/transition_zone.tscn" id="3_tz_scene"]
 [ext_resource type="PackedScene" path="res://scenes/objects/item_world/item_world.tscn" id="4_item_world_scene"]
 [ext_resource type="Resource" path="res://assets/items/stone_sword.tres" id="5_stone_sword_data"]
+[ext_resource type="Resource" path="res://assets/items/handmade_pistol.tres" id="30_pistol_data"]
+[ext_resource type="Resource" path="res://assets/items/pistol_ammo.tres" id="31_pistol_ammo_data"]
+[ext_resource type="Resource" path="res://assets/items/cloth_cap.tres" id="32_cloth_cap_data"]
+[ext_resource type="Resource" path="res://assets/items/canvas_jacket.tres" id="33_canvas_jacket_data"]
+[ext_resource type="Resource" path="res://assets/items/trail_pants.tres" id="34_trail_pants_data"]
+[ext_resource type="Resource" path="res://assets/items/field_pack.tres" id="35_field_pack_data"]
 [ext_resource type="Resource" path="res://assets/areas/basement_area.tres" id="6_basement_area"]
 [ext_resource type="Script" path="res://scripts/world/encounter_controller.gd" id="11_encounter_controller"]
 [ext_resource type="PackedScene" path="res://scenes/ui/reward_selection/reward_selection.tscn" id="12_reward_selection"]
@@ -13,6 +19,18 @@
 [ext_resource type="PackedScene" path="res://scenes/presentation/world_environment_presenter.tscn" id="15_environment_presenter_scene"]
 [ext_resource type="PackedScene" path="res://scenes/presentation/basement_art.tscn" id="16_basement_art_scene"]
 [ext_resource type="PackedScene" path="res://scenes/presentation/debug_controller.tscn" id="17_debug_controller_scene"]
+[ext_resource type="PackedScene" path="res://scenes/objects/gatherable_resource/gatherable_resource.tscn" id="18_gatherable_scene"]
+[ext_resource type="Resource" path="res://assets/world_resources/wood_resource.tres" id="19_wood_resource"]
+[ext_resource type="Resource" path="res://assets/world_resources/stone_resource.tres" id="20_stone_resource"]
+[ext_resource type="PackedScene" path="res://scenes/objects/water_source/water_source.tscn" id="21_water_source_scene"]
+[ext_resource type="PackedScene" path="res://scenes/objects/item_world/item_world.tscn" id="22_empty_container_scene"]
+[ext_resource type="Resource" path="res://assets/items/empty_container.tres" id="23_empty_container"]
+[ext_resource type="PackedScene" path="res://scenes/objects/gatherable_resource/gatherable_resource.tscn" id="24_food_resource_scene"]
+[ext_resource type="Resource" path="res://assets/world_resources/ration_resource.tres" id="25_ration_resource"]
+[ext_resource type="PackedScene" path="res://scenes/objects/campfire/campfire.tscn" id="26_campfire_scene"]
+[ext_resource type="PackedScene" path="res://scenes/objects/torch/torch.tscn" id="27_torch_scene"]
+[ext_resource type="PackedScene" path="res://scenes/objects/building/rain_shelter.tscn" id="28_shelter_scene"]
+[ext_resource type="PackedScene" path="res://scenes/objects/building/wood_wall.tscn" id="29_wall_scene"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h"]
 size = Vector2(2560, 40)
@@ -101,6 +119,70 @@ script = ExtResource("11_encounter_controller")
 [node name="StoneSword" parent="." instance=ExtResource("4_item_world_scene")]
 position = Vector2(960, 520)
 item_data = ExtResource("5_stone_sword_data")
+
+[node name="HandmadePistol" parent="." instance=ExtResource("4_item_world_scene")]
+position = Vector2(880, 520)
+item_data = ExtResource("30_pistol_data")
+
+[node name="PistolAmmo" parent="." instance=ExtResource("4_item_world_scene")]
+position = Vector2(920, 520)
+item_data = ExtResource("31_pistol_ammo_data")
+
+[node name="ClothCap" parent="." instance=ExtResource("4_item_world_scene")]
+position = Vector2(620, 580)
+item_data = ExtResource("32_cloth_cap_data")
+
+[node name="CanvasJacket" parent="." instance=ExtResource("4_item_world_scene")]
+position = Vector2(680, 580)
+item_data = ExtResource("33_canvas_jacket_data")
+
+[node name="TrailPants" parent="." instance=ExtResource("4_item_world_scene")]
+position = Vector2(740, 580)
+item_data = ExtResource("34_trail_pants_data")
+
+[node name="FieldPack" parent="." instance=ExtResource("4_item_world_scene")]
+position = Vector2(800, 580)
+item_data = ExtResource("35_field_pack_data")
+
+[node name="ResourceWoodBasement01" parent="." instance=ExtResource("18_gatherable_scene")]
+position = Vector2(1080, 720)
+entity_id = &"basement_wood_01"
+resource_definition = ExtResource("19_wood_resource")
+
+[node name="ResourceStoneBasement01" parent="." instance=ExtResource("18_gatherable_scene")]
+position = Vector2(1440, 720)
+entity_id = &"basement_stone_01"
+resource_definition = ExtResource("20_stone_resource")
+
+[node name="WaterSourceBasement01" parent="." instance=ExtResource("21_water_source_scene")]
+position = Vector2(600, 720)
+source_type = 3
+disease_chance = 0.35
+
+[node name="EmptyContainerBasement01" parent="." instance=ExtResource("22_empty_container_scene")]
+position = Vector2(920, 720)
+item_data = ExtResource("23_empty_container")
+
+[node name="ResourceRationBasement01" parent="." instance=ExtResource("24_food_resource_scene")]
+position = Vector2(1120, 900)
+entity_id = &"basement_ration_01"
+resource_definition = ExtResource("25_ration_resource")
+
+[node name="CampfireBasement01" parent="." instance=ExtResource("26_campfire_scene")]
+position = Vector2(840, 900)
+entity_id = &"basement_campfire_01"
+
+[node name="TorchBasement01" parent="." instance=ExtResource("27_torch_scene")]
+position = Vector2(1020, 880)
+entity_id = &"basement_torch_01"
+
+[node name="RainShelterBasement01" parent="." instance=ExtResource("28_shelter_scene")]
+position = Vector2(1440, 1080)
+entity_id = &"basement_shelter_01"
+
+[node name="WoodWallBasement01" parent="." instance=ExtResource("29_wall_scene")]
+position = Vector2(1560, 1080)
+entity_id = &"basement_wall_01"
 
 [node name="EscapeParts0" parent="." instance=ExtResource("13_escape_material_scene")]
 position = Vector2(760, 1080)

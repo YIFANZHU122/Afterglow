@@ -7,8 +7,11 @@ const DEFAULT_INITIAL_BUFF_COST: int = 10
 const MAX_REROLL_LEVEL: int = 5
 const CANONICAL_MOVE_SPEED_ID: StringName = &"move_speed"
 const LEGACY_MOVE_SPEED_ID: StringName = &"speed"
+const ATTRIBUTE_POINTS_PER_TIER: int = 5
+const CRYSTAL_TIER_THRESHOLDS: Array[int] = [0, 10, 30, 60, 100, 160]
 
 var _crystals: int = 0
+var _lifetime_crystals: int = 0
 var _initial_buff_levels: Dictionary = {}
 var _equipped_initial_buff: StringName = StringName()
 var _reroll_level: int = 0
@@ -18,6 +21,7 @@ func add_crystals(amount: int) -> bool:
 	if amount <= 0:
 		return false
 	_crystals += amount
+	_lifetime_crystals += amount
 	return true
 
 
@@ -27,6 +31,21 @@ func get_crystals() -> int:
 
 func get_meta_crystals() -> int:
 	return _crystals
+
+
+func get_lifetime_crystals() -> int:
+	return _lifetime_crystals
+
+
+func get_crystal_tier() -> int:
+	for tier: int in range(CRYSTAL_TIER_THRESHOLDS.size() - 1, -1, -1):
+		if _lifetime_crystals >= CRYSTAL_TIER_THRESHOLDS[tier]:
+			return tier
+	return 0
+
+
+func get_attribute_point_bonus() -> int:
+	return get_crystal_tier() * ATTRIBUTE_POINTS_PER_TIER
 
 
 func purchase_initial_buff(buff_id: StringName, cost: int = DEFAULT_INITIAL_BUFF_COST) -> bool:
@@ -77,6 +96,7 @@ func get_reroll_charges() -> int:
 func create_snapshot() -> Dictionary:
 	return {
 		"meta_crystals": _crystals,
+		"lifetime_crystals": _lifetime_crystals,
 		"initial_buff_levels": _initial_buff_levels.duplicate(true),
 		"equipped_initial_buff": String(_equipped_initial_buff),
 		"reroll_level": _reroll_level,
@@ -88,6 +108,11 @@ func restore_snapshot(snapshot: Dictionary) -> bool:
 		return false
 	var restored_crystals := _parse_non_negative_int(snapshot.get("meta_crystals", 0))
 	if restored_crystals < 0:
+		return false
+	var restored_lifetime := restored_crystals
+	if snapshot.has("lifetime_crystals"):
+		restored_lifetime = _parse_non_negative_int(snapshot.get("lifetime_crystals"))
+	if restored_lifetime < restored_crystals:
 		return false
 	var raw_levels: Variant = snapshot.get("initial_buff_levels", {})
 	if not raw_levels is Dictionary:
@@ -114,6 +139,7 @@ func restore_snapshot(snapshot: Dictionary) -> bool:
 	if restored_reroll_level < 0:
 		return false
 	_crystals = restored_crystals
+	_lifetime_crystals = restored_lifetime
 	_initial_buff_levels = restored_levels
 	_equipped_initial_buff = restored_equipped
 	_reroll_level = clampi(restored_reroll_level, 0, MAX_REROLL_LEVEL)
@@ -121,9 +147,10 @@ func restore_snapshot(snapshot: Dictionary) -> bool:
 
 
 func reset() -> bool:
-	var changed := _crystals != 0 or not _initial_buff_levels.is_empty() \
+	var changed := _crystals != 0 or _lifetime_crystals != 0 or not _initial_buff_levels.is_empty() \
 		or not _equipped_initial_buff.is_empty() or _reroll_level != 0
 	_crystals = 0
+	_lifetime_crystals = 0
 	_initial_buff_levels.clear()
 	_equipped_initial_buff = StringName()
 	_reroll_level = 0

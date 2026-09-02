@@ -7,6 +7,8 @@ const ENCOUNTER_SPAWN_DEFINITION_SCRIPT: Script = preload("res://scripts/data/en
 const ENCOUNTER_DEFINITION_SCRIPT: Script = preload("res://scripts/data/encounter_definition.gd")
 const AREA_DEFINITION_SCRIPT: Script = preload("res://scripts/data/area_definition.gd")
 const UPGRADE_DEFINITION_SCRIPT: Script = preload("res://scripts/data/upgrade_definition.gd")
+const ITEM_DATA_SCRIPT: Script = preload("res://scripts/item_data.gd")
+const WORLD_RESOURCE_DEFINITION_SCRIPT: Script = preload("res://scripts/data/world_resource_definition.gd")
 
 
 func validate_spawn(definition: Resource) -> PackedStringArray:
@@ -76,4 +78,39 @@ func validate_upgrade(definition: Resource) -> PackedStringArray:
 		return errors
 	if not bool(definition.call("is_valid")):
 		errors.append("upgrade definition requires an id, display name, supported effect, and positive amount")
+	return errors
+
+
+func validate_item(definition: Resource) -> PackedStringArray:
+	var errors := PackedStringArray()
+	if definition == null:
+		errors.append("item definition is null")
+		return errors
+	if definition.get_script() != ITEM_DATA_SCRIPT:
+		errors.append("item definition uses an unexpected script")
+		return errors
+	var item: ItemData = definition as ItemData
+	if item == null or not item.is_valid():
+		errors.append("item definition is invalid")
+		return errors
+	var seen_tags: Dictionary = {}
+	for tag: String in item.tags:
+		if tag.is_empty() or seen_tags.has(tag):
+			errors.append("item tags must be unique and non-empty")
+		seen_tags[tag] = true
+	if item.max_durability > 0 and item.max_stack != 1:
+		errors.append("durable items must not stack")
+	return errors
+
+
+func validate_world_resource(definition: Resource) -> PackedStringArray:
+	var errors := PackedStringArray()
+	if definition == null:
+		errors.append("world resource definition is null")
+		return errors
+	if definition.get_script() != WORLD_RESOURCE_DEFINITION_SCRIPT:
+		errors.append("world resource definition uses an unexpected script")
+		return errors
+	if not bool(definition.call("is_valid")):
+		errors.append("world resource definition is invalid")
 	return errors

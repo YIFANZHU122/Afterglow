@@ -147,7 +147,7 @@ func _has_invalidation_marker() -> bool:
 	if parse_error != OK or not parser.data is Dictionary:
 		return true
 	var parsed: Dictionary = parser.data
-	return int(parsed.get("schema_version", -1)) == RUN_SNAPSHOT_DATA_SCRIPT.CURRENT_SCHEMA_VERSION \
+	return RUN_SNAPSHOT_DATA_SCRIPT.SUPPORTED_SCHEMA_VERSIONS.has(int(parsed.get("schema_version", -1))) \
 		and bool(parsed.get("invalidated", false))
 
 

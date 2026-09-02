@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"wood_wall_kit"
+display_name = "木墙组件"
+item_type = 3
+max_stack = 3
+unit_weight = 1.5
+tags = PackedStringArray("building", "wall", "crafted")

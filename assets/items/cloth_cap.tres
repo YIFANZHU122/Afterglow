@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_item"]
+[ext_resource type="Script" path="res://scripts/data/equipment_definition.gd" id="2_equipment"]
+
+[sub_resource type="Resource" id="EquipmentDefinition_cloth_cap"]
+script = ExtResource("2_equipment")
+id = &"cloth_cap"
+slot = 0
+move_speed_multiplier = 1.02
+disease_resistance = 0.05
+
+[resource]
+script = ExtResource("1_item")
+id = &"cloth_cap"
+display_name = "旧布帽"
+item_type = 8
+max_stack = 1
+unit_weight = 0.3
+tags = PackedStringArray("equipment", "head")
+equipment_definition = SubResource("EquipmentDefinition_cloth_cap")

@@ -9,6 +9,7 @@ const RUN_REWARD_MODEL_SCRIPT: Script = preload("res://scripts/progression/run_r
 const RUN_BUILD_MODEL_SCRIPT: Script = preload("res://scripts/progression/run_build_model.gd")
 const SURVIVAL_TUNING_SCRIPT: Script = preload("res://scripts/data/survival_tuning.gd")
 const SURVIVAL_VITALS_MODEL_SCRIPT: Script = preload("res://scripts/player/survival_vitals_model.gd")
+const SURVIVAL_CONSUMPTION_MODEL_SCRIPT: Script = preload("res://scripts/player/survival_consumption_model.gd")
 const SURVIVAL_CLOCK_MODEL_SCRIPT: Script = preload("res://scripts/world/survival_clock_model.gd")
 const DISASTER_SCHEDULER_MODEL_SCRIPT: Script = preload("res://scripts/world/disaster_scheduler_model.gd")
 const RESOURCE_BUDGET_MODEL_SCRIPT: Script = preload("res://scripts/world/resource_budget_model.gd")
@@ -16,10 +17,21 @@ const ESCAPE_OBJECTIVE_MODEL_SCRIPT: Script = preload("res://scripts/world/escap
 const THREAT_BUDGET_MODEL_SCRIPT: Script = preload("res://scripts/world/threat_budget_model.gd")
 const DISASTER_EVENT_MODEL_SCRIPT: Script = preload("res://scripts/world/disaster_event_model.gd")
 const INVENTORY_MODEL_SCRIPT: Script = preload("res://scripts/items/inventory_model.gd")
+const ITEM_CATALOG_SCRIPT: Script = preload("res://scripts/items/item_catalog.gd")
 const WORLD_SCENE_CATALOG_SCRIPT: Script = preload("res://scripts/world/world_scene_catalog.gd")
 const META_PROGRESSION_MODEL_SCRIPT: Script = preload("res://scripts/progression/meta_progression_model.gd")
 const RUN_BUFF_DRAFT_MODEL_SCRIPT: Script = preload("res://scripts/progression/run_buff_draft_model.gd")
 const UPGRADE_DEFINITION_SCRIPT: Script = preload("res://scripts/data/upgrade_definition.gd")
+const NIGHT_FOG_MODEL_SCRIPT: Script = preload("res://scripts/world/night_fog_model.gd")
+const MOON_CYCLE_MODEL_SCRIPT: Script = preload("res://scripts/world/moon_cycle_model.gd")
+const DARKNESS_MARK_MODEL_SCRIPT: Script = preload("res://scripts/world/darkness_mark_model.gd")
+const NOISE_EVENT_MODEL_SCRIPT: Script = preload("res://scripts/combat/noise_event_model.gd")
+const CHARACTER_BUILD_MODEL_SCRIPT: Script = preload("res://scripts/progression/character_build_model.gd")
+const CHARACTER_ATTRIBUTES_MODEL_SCRIPT: Script = preload("res://scripts/progression/character_attributes_model.gd")
+const EQUIPMENT_MODEL_SCRIPT: Script = preload("res://scripts/items/equipment_model.gd")
+const EQUIPMENT_TRANSACTION_MODEL_SCRIPT: Script = preload("res://scripts/items/equipment_transaction_model.gd")
+const EQUIPMENT_INTERACTION_MODEL_SCRIPT: Script = preload("res://scripts/player/equipment_interaction_model.gd")
+const ENVIRONMENT_EFFECT_RESOLVER_SCRIPT: Script = preload("res://scripts/world/environment_effect_resolver.gd")
 
 ## GameManager —— 全局游戏管理器（Autoload 单例）
 ## 职责：本局运行会话、场景切换、传送出生点记录、传送冷却防抖
@@ -41,6 +53,7 @@ signal survival_environment_damage(damage_ratio: float)
 signal escape_objective_changed(parts: int, fuel: int, cloth: int, key: int, startup_seconds: float, started: bool)
 signal disaster_changed(kind: int, phase: int, remaining_seconds: float, risk_level: int, countermeasure_progress: float)
 signal boss_progress_changed(phase: int, health: float, completion_route: int, components: int, devices: int)
+signal noise_event_emitted(noise_event: RefCounted)
 
 # 传送后玩家应出现的出生点名称（由 TransitionZone 设置，由各场景读取）
 var spawn_point_name: String = "PlayerSpawn"
@@ -54,11 +67,15 @@ var _boss_progress: RefCounted
 var _run_reward: RefCounted
 var _run_build: RefCounted
 var _survival_vitals: RefCounted
+var _survival_consumption: RefCounted
 var _survival_clock: RefCounted
 var _disaster_scheduler: RefCounted
 var _resource_budget: RefCounted
 var _escape_objective: RefCounted
 var _threat_budget: RefCounted
+var _night_fog: RefCounted
+var _moon_cycle: RefCounted
+var _darkness_mark: RefCounted
 var _active_disasters: Array[RefCounted] = []
 var _allowed_disaster_kinds: Array[int] = []
 var _disaster_rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -67,6 +84,11 @@ var _reward_choice_used: bool = false
 var _meta_crystals: int = 0
 var _meta_progression: RefCounted
 var _run_buff_draft: RefCounted
+var _character_build: RefCounted
+var _equipment_transaction: RefCounted
+var _equipment_interaction: RefCounted
+var _environment_effect_resolver: RefCounted
+var _environment_effects: Dictionary = {}
 var _run_settlement_awarded: bool = false
 var _pending_scene_state: Dictionary = {}
 var _collected_escape_material_ids: Array[String] = []
@@ -99,6 +121,11 @@ func _ready() -> void:
 	_meta_progression = META_PROGRESSION_MODEL_SCRIPT.new()
 	_run_buff_draft = RUN_BUFF_DRAFT_MODEL_SCRIPT.new(20260827)
 	_load_meta_progression()
+	_character_build = _create_character_build()
+	_equipment_transaction = EQUIPMENT_TRANSACTION_MODEL_SCRIPT.new()
+	_equipment_interaction = EQUIPMENT_INTERACTION_MODEL_SCRIPT.new()
+	_environment_effect_resolver = ENVIRONMENT_EFFECT_RESOLVER_SCRIPT.new()
+	_refresh_environment_effects()
 
 
 func _process(delta: float) -> void:
@@ -237,6 +264,97 @@ func apply_run_upgrade(definition: Resource, quality_multiplier: float = 1.0, qu
 
 func get_run_damage_multiplier() -> float:
 	return _run_build.get_damage_multiplier() if _run_build != null else 1.0
+
+
+func get_character_build_model() -> RefCounted:
+	return _character_build
+
+
+func allocate_character_attribute(attribute: int, amount: int = 1) -> bool:
+	return _character_build != null and _character_build.allocate_attribute(attribute, amount)
+
+
+func confirm_character_attributes() -> bool:
+	return _character_build != null and _character_build.confirm_attributes()
+
+
+func get_character_attribute_points_remaining() -> int:
+	return _character_build.get_attribute_points_remaining() if _character_build != null else 0
+
+
+func get_character_attribute_total_points() -> int:
+	return _character_build.get_attribute_total_points() if _character_build != null else 0
+
+
+func get_character_attribute_value(attribute: int) -> int:
+	return _character_build.get_attribute_value(attribute) if _character_build != null else 0
+
+
+func are_character_attributes_confirmed() -> bool:
+	return _character_build != null and _character_build.are_attributes_confirmed()
+
+
+func equip_character_item(item_id: StringName) -> bool:
+	if _character_build == null or item_id.is_empty():
+		return false
+	var item: ItemData = ITEM_CATALOG_SCRIPT.new().get_item(item_id)
+	if item == null:
+		return false
+	var before: Dictionary = _character_build.create_snapshot()
+	if not _character_build.equip_item(item, Inventory.get_occupied_slot_count()):
+		return false
+	if not Inventory.configure_slot_count(_character_build.get_inventory_slot_count()):
+		_character_build.restore_snapshot(before, ITEM_CATALOG_SCRIPT.new())
+		return false
+	return true
+
+
+func start_equipping_selected_item() -> bool:
+	if _equipment_interaction == null or _character_build == null or _run_session == null \
+		or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	var item: ItemData = Inventory.get_selected_item()
+	if item == null or item.item_type != ItemData.ItemType.EQUIPMENT or item.equipment_definition == null:
+		return false
+	return _equipment_interaction.start(int(item.equipment_definition.slot), item.id)
+
+
+func start_unequipping_character_slot(slot: int) -> bool:
+	if _equipment_interaction == null or _character_build == null or _run_session == null \
+		or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	var item_id: StringName = _character_build.get_equipped_item_id(slot)
+	if item_id.is_empty():
+		return false
+	return _equipment_interaction.start_unequip(slot, item_id)
+
+
+func advance_character_equipment_interaction(delta: float, is_moving: bool, was_hit: bool) -> bool:
+	if _equipment_interaction == null or _equipment_transaction == null or _character_build == null:
+		return false
+	if not _equipment_interaction.advance(delta, is_moving, was_hit):
+		return false
+	var request: Dictionary = _equipment_interaction.consume_completed()
+	var operation: int = int(request.get("operation", -1))
+	var slot: int = int(request.get("slot", -1))
+	if operation == EQUIPMENT_INTERACTION_MODEL_SCRIPT.Operation.EQUIP:
+		return _equipment_transaction.equip_selected(Inventory, _character_build, ITEM_CATALOG_SCRIPT.new())
+	if operation == EQUIPMENT_INTERACTION_MODEL_SCRIPT.Operation.UNEQUIP:
+		return _equipment_transaction.unequip_slot(Inventory, _character_build, ITEM_CATALOG_SCRIPT.new(), slot)
+	return false
+
+
+func cancel_character_equipment_interaction() -> bool:
+	return _equipment_interaction != null and _equipment_interaction.cancel()
+
+
+func get_character_equipment_interaction_remaining_seconds() -> float:
+	return _equipment_interaction.get_remaining_seconds() if _equipment_interaction != null else 0.0
+
+
+func unequip_character_slot(slot: int) -> bool:
+	return _equipment_transaction != null and _character_build != null \
+		and _equipment_transaction.unequip_slot(Inventory, _character_build, ITEM_CATALOG_SCRIPT.new(), slot)
 
 
 func get_run_move_speed_multiplier() -> float:
@@ -400,6 +518,7 @@ func finalize_run_failure() -> bool:
 		_run_reward.reset()
 	if _run_build != null:
 		_run_build.reset()
+	_character_build = _create_character_build()
 	_run_buff_draft = RUN_BUFF_DRAFT_MODEL_SCRIPT.new()
 	Inventory.drop_all()
 	_reward_choice_used = false
@@ -425,6 +544,7 @@ func reset_run() -> bool:
 	var session_changed: bool = _run_session.reset()
 	var reward_changed: bool = _run_reward.reset() if _run_reward != null else false
 	var build_changed: bool = _run_build.reset() if _run_build != null else false
+	_character_build = _create_character_build()
 	_run_buff_draft = RUN_BUFF_DRAFT_MODEL_SCRIPT.new()
 	_reward_choice_used = false
 	_run_difficulty = SURVIVAL_TUNING_SCRIPT.Difficulty.NORMAL
@@ -458,13 +578,19 @@ func tick_survival(delta: float) -> float:
 	if _survival_vitals == null or _survival_clock == null or _disaster_scheduler == null:
 		return 0.0
 	_survival_clock.advance(delta)
+	_refresh_environment_effects()
 	if _threat_budget != null:
 		_threat_budget.set_time_context(_survival_clock.get_day_index(), _survival_clock.get_overtime_stage())
+	var consumption_multiplier: float = SURVIVAL_TUNING_SCRIPT.difficulty_consumption_multiplier(_run_difficulty) \
+		* get_run_survival_consumption_multiplier() \
+		* _survival_consumption.get_consumption_multiplier() \
+		* maxf(float(_environment_effects.get("hunger_drain_multiplier", 1.0)), float(_environment_effects.get("water_drain_multiplier", 1.0)))
 	var damage_ratio: float = _survival_vitals.tick(
 		delta,
-		SURVIVAL_TUNING_SCRIPT.difficulty_consumption_multiplier(_run_difficulty) \
-		* get_run_survival_consumption_multiplier()
+		consumption_multiplier
 	)
+	damage_ratio += delta * float(_environment_effects.get("hazard_damage_per_second", 0.0))
+	_survival_consumption.tick(delta)
 	advance_disasters(delta)
 	if _disaster_scheduler.should_check(delta):
 		var disaster_rng := RandomNumberGenerator.new()
@@ -503,6 +629,88 @@ func consume_water(amount: float) -> bool:
 	if consumed:
 		_emit_survival_changed()
 	return consumed
+
+
+func use_selected_item() -> bool:
+	if _survival_vitals == null or _survival_consumption == null or _run_session == null \
+		or not _run_session.is_run_active() or _run_session.is_paused():
+		return false
+	var item: ItemData = Inventory.get_selected_item()
+	if item == null:
+		return false
+	if item.item_type == ItemData.ItemType.EQUIPMENT:
+		return start_equipping_selected_item()
+	var vitals_before: Dictionary = _survival_vitals.create_snapshot()
+	var disease_before: Dictionary = _survival_consumption.create_snapshot()
+	var consumed: bool = false
+	if item.item_type == ItemData.ItemType.FOOD:
+		var disease_chance: float = item.disease_chance * (1.0 + float(_run_difficulty) * 0.2)
+		var roll: float = random_float(RUN_RANDOM_STREAM_MODEL_SCRIPT.STREAM_CONTAINERS)
+		consumed = _survival_consumption.consume_food(item, _survival_vitals, roll, disease_chance)
+	elif item.item_type == ItemData.ItemType.CONTAINER:
+		var container_state: Dictionary = Inventory.get_selected_container_snapshot()
+		var amount: int = int(container_state.get("amount", 0))
+		if amount <= 0:
+			return false
+		var water_disease_chance: float = _water_disease_chance(int(container_state.get("source", 0)))
+		consumed = _survival_consumption.consume_water(
+			10.0,
+			_survival_vitals,
+			random_float(RUN_RANDOM_STREAM_MODEL_SCRIPT.STREAM_CONTAINERS),
+			0.0 if bool(container_state.get("purified", false)) else water_disease_chance
+		)
+	elif item.water_restore > 0.0:
+		consumed = _survival_consumption.consume_water(
+			item.water_restore,
+			_survival_vitals,
+			random_float(RUN_RANDOM_STREAM_MODEL_SCRIPT.STREAM_CONTAINERS)
+		)
+	var consumed_inventory: bool = Inventory.consume_selected_water(1) if item.item_type == ItemData.ItemType.CONTAINER else Inventory.consume_selected(1)
+	if not consumed or not consumed_inventory:
+		_survival_vitals.restore_snapshot(vitals_before)
+		_survival_consumption.restore_snapshot(disease_before)
+		return false
+	_emit_survival_changed()
+	return true
+
+
+func fill_selected_container_from_source(source_type: int, amount: int = 1) -> bool:
+	if _run_session == null or not _run_session.is_run_active() or _run_session.is_paused() or amount <= 0:
+		return false
+	return Inventory.fill_selected_container(source_type, amount, false)
+
+
+func get_water_disease_chance(source_type: int) -> float:
+	return _water_disease_chance(source_type)
+
+
+func _water_disease_chance(source_type: int) -> float:
+	var base: float = 0.35
+	match source_type:
+		1:
+			base = 0.10
+		2:
+			base = 0.20
+		3:
+			base = 0.35
+		_:
+			base = 0.35
+	return clampf(base + 0.05 * float(_run_difficulty), 0.0, 1.0)
+
+
+func has_disease() -> bool:
+	return _survival_consumption != null and _survival_consumption.has_disease()
+
+
+func get_disease_remaining_seconds() -> float:
+	return _survival_consumption.get_disease_remaining_seconds() if _survival_consumption != null else 0.0
+
+
+func cure_disease() -> bool:
+	if _survival_consumption == null or not _survival_consumption.cure():
+		return false
+	_emit_survival_changed()
+	return true
 
 
 func collect_escape_material(material_type: int, amount: int = 1) -> bool:
@@ -634,6 +842,13 @@ func random_float(stream_name: StringName) -> float:
 	return float(_run_random_stream.call("randf", stream_name))
 
 
+func emit_noise_event(noise_event: RefCounted) -> bool:
+	if noise_event == null or noise_event.get_script() != NOISE_EVENT_MODEL_SCRIPT:
+		return false
+	noise_event_emitted.emit(noise_event)
+	return true
+
+
 func apply_boss_damage(amount: float) -> bool:
 	if not _can_advance_boss() or not bool(_boss_progress.call("apply_combat_damage", amount)):
 		return false
@@ -714,6 +929,18 @@ func add_meta_crystals(amount: int) -> bool:
 
 func get_meta_crystals() -> int:
 	return _meta_progression.get_crystals() if _meta_progression != null else _meta_crystals
+
+
+func get_meta_lifetime_crystals() -> int:
+	return _meta_progression.get_lifetime_crystals() if _meta_progression != null else 0
+
+
+func get_meta_crystal_tier() -> int:
+	return _meta_progression.get_crystal_tier() if _meta_progression != null else 0
+
+
+func get_meta_attribute_point_bonus() -> int:
+	return _meta_progression.get_attribute_point_bonus() if _meta_progression != null else 0
 
 
 func purchase_initial_buff(buff_id: StringName, cost: int = 10) -> bool:
@@ -834,6 +1061,22 @@ func get_water() -> float:
 	return _survival_vitals.get_water() if _survival_vitals != null else 0.0
 
 
+func get_survival_stamina_recovery_multiplier() -> float:
+	return _survival_vitals.get_stamina_recovery_multiplier() if _survival_vitals != null else 1.0
+
+
+func get_survival_healing_multiplier() -> float:
+	return _survival_vitals.get_healing_multiplier() if _survival_vitals != null else 1.0
+
+
+func get_survival_stamina_cost_multiplier() -> float:
+	return _survival_vitals.get_stamina_cost_multiplier() if _survival_vitals != null else 1.0
+
+
+func get_survival_move_speed_multiplier() -> float:
+	return _survival_vitals.get_move_speed_multiplier() if _survival_vitals != null else 1.0
+
+
 func get_floor_elapsed_seconds() -> float:
 	return _survival_clock.get_elapsed_seconds() if _survival_clock != null else 0.0
 
@@ -850,9 +1093,86 @@ func get_overtime_stage() -> int:
 	return _survival_clock.get_overtime_stage() if _survival_clock != null else 0
 
 
+func get_night_index() -> int:
+	if _survival_clock == null:
+		return 0
+	return maxi(int(floor(_survival_clock.get_elapsed_seconds() / SURVIVAL_TUNING_SCRIPT.CYCLE_DURATION_SECONDS)), 0)
+
+
+func get_night_fog_phase() -> int:
+	if _night_fog == null or _survival_clock == null:
+		return 0
+	var cycle_seconds: float = fmod(_survival_clock.get_elapsed_seconds(), SURVIVAL_TUNING_SCRIPT.CYCLE_DURATION_SECONDS)
+	var night_elapsed: float = maxf(cycle_seconds - SURVIVAL_TUNING_SCRIPT.DAY_DURATION_SECONDS, 0.0)
+	return int(_night_fog.get_phase(night_elapsed, _survival_clock.is_night()))
+
+
+func get_moon_kind() -> int:
+	return int(_moon_cycle.get_kind(get_night_index())) if _moon_cycle != null else 0
+
+
+func get_monster_spawn_multiplier() -> float:
+	return float(_moon_cycle.get_monster_spawn_multiplier(get_night_index())) if _moon_cycle != null else 1.0
+
+
+func get_special_spawn_ratio() -> float:
+	return float(_moon_cycle.get_special_spawn_ratio(get_night_index())) if _moon_cycle != null else 0.0
+
+
+func get_enemy_speed_multiplier() -> float:
+	return float(_moon_cycle.get_enemy_speed_multiplier(get_night_index())) if _moon_cycle != null else 1.0
+
+
+func get_night_elapsed_seconds() -> float:
+	if _survival_clock == null:
+		return 0.0
+	var cycle_seconds: float = fmod(_survival_clock.get_elapsed_seconds(), SURVIVAL_TUNING_SCRIPT.CYCLE_DURATION_SECONDS)
+	return maxf(cycle_seconds - SURVIVAL_TUNING_SCRIPT.DAY_DURATION_SECONDS, 0.0)
+
+
+func is_new_moon() -> bool:
+	return _moon_cycle != null and _moon_cycle.is_new_moon(get_night_index())
+
+
+func register_darkness_attack(fully_dark: bool) -> bool:
+	return _darkness_mark != null and _darkness_mark.register_dark_attack(is_new_moon(), fully_dark, get_night_index())
+
+
+func has_darkness_mark() -> bool:
+	return _darkness_mark != null and _darkness_mark.has_pending_mark()
+
+
+func consume_new_moon_mark() -> Dictionary:
+	return _darkness_mark.consume_for_new_moon() if _darkness_mark != null else {"budget_multiplier": 1.0, "special_tier_two_warning": false}
+
+
 func get_disaster_probability() -> float:
 	return _disaster_scheduler.get_trigger_probability(get_floor_elapsed_seconds()) \
 		if _disaster_scheduler != null else 0.0
+
+
+func get_environment_effects() -> Dictionary:
+	return _environment_effects.duplicate(true)
+
+
+func _refresh_environment_effects() -> void:
+	if _environment_effect_resolver == null:
+		_environment_effects = {}
+		return
+	var disaster_kinds: Array[int] = []
+	for event: RefCounted in _active_disasters:
+		if bool(event.call("is_active")):
+			disaster_kinds.append(int(event.call("get_kind")))
+	var weather: StringName = &"clear"
+	if disaster_kinds.has(DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.RAINSTORM):
+		weather = &"rain"
+	elif disaster_kinds.has(DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.HEATWAVE):
+		weather = &"heatwave"
+	elif disaster_kinds.has(DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.DENSE_FOG):
+		weather = &"dense_fog"
+	elif disaster_kinds.has(DISASTER_SCHEDULER_MODEL_SCRIPT.DisasterKind.COLD_SNAP):
+		weather = &"cold_snap"
+	_environment_effects = _environment_effect_resolver.resolve(weather, disaster_kinds, 0, false)
 
 
 func start_disaster(kind: int) -> bool:
@@ -876,6 +1196,7 @@ func start_disaster(kind: int) -> bool:
 	if not _disaster_scheduler.register_trigger(kind, elapsed_seconds):
 		return false
 	_active_disasters.append(event)
+	_refresh_environment_effects()
 	_emit_disaster_changed()
 	return true
 
@@ -894,6 +1215,7 @@ func advance_disasters(delta: float) -> bool:
 		else:
 			changed = true
 	_active_disasters = remaining_events
+	_refresh_environment_effects()
 	if changed or had_active_events:
 		_emit_disaster_changed()
 	return changed
@@ -1113,9 +1435,14 @@ func is_run_dead() -> bool:
 
 func _reset_survival_models() -> void:
 	_survival_vitals = SURVIVAL_VITALS_MODEL_SCRIPT.new()
+	_survival_consumption = SURVIVAL_CONSUMPTION_MODEL_SCRIPT.new()
 	_survival_clock = SURVIVAL_CLOCK_MODEL_SCRIPT.new()
 	_disaster_scheduler = DISASTER_SCHEDULER_MODEL_SCRIPT.new(_run_difficulty)
 	_threat_budget = THREAT_BUDGET_MODEL_SCRIPT.new()
+	_night_fog = NIGHT_FOG_MODEL_SCRIPT.new()
+	_moon_cycle = MOON_CYCLE_MODEL_SCRIPT.new()
+	_darkness_mark = DARKNESS_MARK_MODEL_SCRIPT.new()
+	_refresh_environment_effects()
 
 
 func _reset_escape_objective() -> void:
@@ -1201,9 +1528,14 @@ func _create_run_snapshot() -> RefCounted:
 	snapshot.set("random_stream_state", _run_random_stream.create_snapshot())
 	snapshot.set("survival_state", {
 		"vitals": _survival_vitals.create_snapshot(),
+		"consumption": _survival_consumption.create_snapshot(),
 		"clock": _survival_clock.create_snapshot(),
 		"scheduler": _disaster_scheduler.create_snapshot(),
 		"threat_budget": _threat_budget.create_snapshot(),
+		"night_fog": _night_fog.create_snapshot() if _night_fog != null else {},
+		"moon_cycle": _moon_cycle.create_snapshot() if _moon_cycle != null else {},
+		"darkness_mark": _darkness_mark.create_snapshot() if _darkness_mark != null else {},
+		"environment_effects": _environment_effects.duplicate(true),
 		"reward": _run_reward.create_snapshot(),
 		"build": _run_build.create_snapshot(),
 		"buff_draft": _run_buff_draft.create_snapshot() if _run_buff_draft != null else {},
@@ -1226,11 +1558,14 @@ func _create_run_snapshot() -> RefCounted:
 		if player != null and player.has_method("create_snapshot"):
 			player_state = player.call("create_snapshot")
 		for entity: Node in _get_scene_group_nodes(current_scene, "enemy"):
+			if entity.is_in_group("dynamic_enemy"):
+				continue
 			if entity.has_method("create_snapshot"):
 				enemy_entities.append(entity.call("create_snapshot"))
 	snapshot.set("player_state", player_state)
 	snapshot.set("enemy_state", {"entities": enemy_entities})
 	snapshot.set("inventory_state", Inventory.create_snapshot())
+	snapshot.set("character_build_state", _character_build.create_snapshot() if _character_build != null else {})
 	snapshot.set("building_state", _create_building_snapshot(current_scene))
 	snapshot.set("interaction_state", _create_interaction_snapshot(current_scene))
 	return snapshot
@@ -1288,19 +1623,34 @@ func _restore_run_snapshot(snapshot: RefCounted) -> bool:
 	if survival_state == null:
 		return false
 	var restored_vitals: RefCounted = SURVIVAL_VITALS_MODEL_SCRIPT.new()
+	var restored_consumption: RefCounted = SURVIVAL_CONSUMPTION_MODEL_SCRIPT.new()
 	var restored_clock: RefCounted = SURVIVAL_CLOCK_MODEL_SCRIPT.new()
 	var restored_scheduler: RefCounted = DISASTER_SCHEDULER_MODEL_SCRIPT.new(restored_session.get_difficulty())
 	var restored_threat: RefCounted = THREAT_BUDGET_MODEL_SCRIPT.new()
+	var restored_night_fog: RefCounted = NIGHT_FOG_MODEL_SCRIPT.new()
+	var restored_moon_cycle: RefCounted = MOON_CYCLE_MODEL_SCRIPT.new()
+	var restored_darkness_mark: RefCounted = DARKNESS_MARK_MODEL_SCRIPT.new()
 	var restored_reward: RefCounted = RUN_REWARD_MODEL_SCRIPT.new()
 	var restored_build: RefCounted = RUN_BUILD_MODEL_SCRIPT.new()
 	var restored_buff_draft: RefCounted = RUN_BUFF_DRAFT_MODEL_SCRIPT.new()
 	if not survival_state.has("vitals") or not restored_vitals.restore_snapshot(survival_state["vitals"]):
+		return false
+	var consumption_state: Dictionary = survival_state.get("consumption", {}) as Dictionary
+	if consumption_state == null or not restored_consumption.restore_snapshot(consumption_state):
 		return false
 	if not survival_state.has("clock") or not restored_clock.restore_snapshot(survival_state["clock"]):
 		return false
 	if not survival_state.has("scheduler") or not restored_scheduler.restore_snapshot(survival_state["scheduler"]):
 		return false
 	if not survival_state.has("threat_budget") or not restored_threat.restore_snapshot(survival_state["threat_budget"]):
+		return false
+	if survival_state.has("night_fog") and not restored_night_fog.restore_snapshot(survival_state["night_fog"]):
+		return false
+	if survival_state.has("moon_cycle") and not restored_moon_cycle.restore_snapshot(survival_state["moon_cycle"]):
+		return false
+	if survival_state.has("darkness_mark") and not restored_darkness_mark.restore_snapshot(survival_state["darkness_mark"]):
+		return false
+	if survival_state.has("environment_effects") and not survival_state["environment_effects"] is Dictionary:
 		return false
 	if not survival_state.has("reward") or not restored_reward.restore_snapshot(survival_state["reward"]):
 		return false
@@ -1316,7 +1666,14 @@ func _restore_run_snapshot(snapshot: RefCounted) -> bool:
 	var inventory_state: Dictionary = snapshot.get("inventory_state") as Dictionary
 	if inventory_state == null:
 		return false
-	var inventory_validator: RefCounted = INVENTORY_MODEL_SCRIPT.new()
+	var raw_character_build_state: Variant = snapshot.get("character_build_state")
+	var character_build_state: Dictionary = raw_character_build_state as Dictionary if raw_character_build_state is Dictionary else {}
+	if not character_build_state.is_empty():
+		var restored_character_build: RefCounted = _create_character_build()
+		if not restored_character_build.restore_snapshot(character_build_state, ITEM_CATALOG_SCRIPT.new()):
+			return false
+		_character_build = restored_character_build
+	var inventory_validator: RefCounted = INVENTORY_MODEL_SCRIPT.new(8, ITEM_CATALOG_SCRIPT.new())
 	if not inventory_validator.restore_snapshot(inventory_state):
 		return false
 	var disaster_state: Dictionary = snapshot.get("disaster_state") as Dictionary
@@ -1342,9 +1699,13 @@ func _restore_run_snapshot(snapshot: RefCounted) -> bool:
 	_boss_progress = restored_boss
 	_run_difficulty = _run_session.get_difficulty()
 	_survival_vitals = restored_vitals
+	_survival_consumption = restored_consumption
 	_survival_clock = restored_clock
 	_disaster_scheduler = restored_scheduler
 	_threat_budget = restored_threat
+	_night_fog = restored_night_fog
+	_moon_cycle = restored_moon_cycle
+	_darkness_mark = restored_darkness_mark
 	_run_reward = restored_reward
 	_run_build = restored_build
 	_run_buff_draft = restored_buff_draft
@@ -1352,6 +1713,7 @@ func _restore_run_snapshot(snapshot: RefCounted) -> bool:
 	_reward_choice_used = bool(survival_state.get("reward_choice_used", false))
 	_active_disasters = restored_disasters
 	_allowed_disaster_kinds = restored_allowed_disaster_kinds
+	_refresh_environment_effects()
 	if not Inventory.restore_snapshot(inventory_state):
 		return false
 	_pending_scene_state = {
@@ -1423,6 +1785,9 @@ func apply_pending_scene_state(scene: Node) -> bool:
 		if not bool(entity.call("restore_snapshot", entity_snapshot)):
 			return false
 	var interaction_state: Dictionary = _pending_scene_state.get("interaction_state", {}) as Dictionary
+	var building_state: Dictionary = _pending_scene_state.get("building_state", {}) as Dictionary
+	if not _apply_building_snapshot(scene, building_state):
+		return false
 	var collected_ids: Array = interaction_state.get("escape_material_ids", []) as Array
 	for node: Node in _get_scene_group_nodes(scene, "snapshot_escape_material"):
 		if collected_ids.has(node.name):
@@ -1434,6 +1799,70 @@ func apply_pending_scene_state(scene: Node) -> bool:
 	for node: Node in _get_scene_group_nodes(scene, "snapshot_environment_device"):
 		if (interaction_state.get("environment_device_ids", []) as Array).has(node.name):
 			node.modulate = Color(0.35, 1.0, 0.65, 1.0)
+	var resource_snapshots: Array = interaction_state.get("resource_nodes", []) as Array
+	if interaction_state.has("resource_nodes"):
+		var resource_by_id: Dictionary = {}
+		for node: Node in _get_scene_group_nodes(scene, "persistent_resource"):
+			var node_id: String = String(node.get("entity_id"))
+			if node_id.is_empty() or resource_by_id.has(node_id):
+				return false
+			resource_by_id[node_id] = node
+		for raw_snapshot: Variant in resource_snapshots:
+			if not raw_snapshot is Dictionary:
+				return false
+			var resource_snapshot: Dictionary = raw_snapshot
+			var resource_id: String = String(resource_snapshot.get("entity_id", ""))
+			if resource_id.is_empty() or not resource_by_id.has(resource_id):
+				return false
+			var resource_node: Node = resource_by_id[resource_id]
+			if not resource_node.has_method("restore_snapshot") or not resource_node.call("restore_snapshot", resource_snapshot):
+				return false
+	var campfire_snapshots: Array = interaction_state.get("campfires", []) as Array
+	if interaction_state.has("campfires"):
+		var campfire_by_id: Dictionary = {}
+		for node: Node in _get_scene_group_nodes(scene, "snapshot_campfire"):
+			var node_campfire_id: String = String(node.get("entity_id"))
+			if node_campfire_id.is_empty() or campfire_by_id.has(node_campfire_id):
+				return false
+			campfire_by_id[node_campfire_id] = node
+		for raw_snapshot: Variant in campfire_snapshots:
+			if not raw_snapshot is Dictionary:
+				return false
+			var campfire_snapshot: Dictionary = raw_snapshot
+			var snapshot_campfire_id: String = String(campfire_snapshot.get("entity_id", ""))
+			if snapshot_campfire_id.is_empty() or not campfire_by_id.has(snapshot_campfire_id):
+				return false
+			var campfire: Node = campfire_by_id[snapshot_campfire_id]
+			if not campfire.has_method("restore_snapshot") or not campfire.call("restore_snapshot", campfire_snapshot):
+				return false
+	var torch_snapshots: Array = interaction_state.get("torches", []) as Array
+	if interaction_state.has("torches"):
+		var torch_by_id: Dictionary = {}
+		for node: Node in _get_scene_group_nodes(scene, "snapshot_torch"):
+			var node_torch_id: String = String(node.get("entity_id"))
+			if node_torch_id.is_empty() or torch_by_id.has(node_torch_id):
+				return false
+			torch_by_id[node_torch_id] = node
+		for raw_snapshot: Variant in torch_snapshots:
+			if not raw_snapshot is Dictionary:
+				return false
+			var torch_snapshot: Dictionary = raw_snapshot
+			var snapshot_torch_id: String = String(torch_snapshot.get("entity_id", ""))
+			if snapshot_torch_id.is_empty() or not torch_by_id.has(snapshot_torch_id):
+				return false
+			var torch: Node = torch_by_id[snapshot_torch_id]
+			if not torch.has_method("restore_snapshot") or not torch.call("restore_snapshot", torch_snapshot):
+				return false
+	var dynamic_director_snapshots: Array = interaction_state.get("dynamic_spawn_directors", []) as Array
+	if interaction_state.has("dynamic_spawn_directors"):
+		var directors: Array[Node] = _get_scene_group_nodes(scene, "snapshot_dynamic_spawn_director")
+		if directors.size() != dynamic_director_snapshots.size():
+			return false
+		for index: int in dynamic_director_snapshots.size():
+			var director_snapshot: Variant = dynamic_director_snapshots[index]
+			if not director_snapshot is Dictionary or not directors[index].has_method("restore_snapshot") \
+				or not directors[index].call("restore_snapshot", director_snapshot):
+				return false
 	_pending_scene_state.clear()
 	return true
 
@@ -1460,23 +1889,156 @@ func _validate_enemy_snapshot(snapshot: Dictionary) -> bool:
 func _validate_interaction_snapshot(snapshot: Dictionary) -> bool:
 	if snapshot.is_empty():
 		return true
-	for key: String in ["escape_material_ids", "suppression_component_ids", "environment_device_ids"]:
+	for key: String in ["escape_material_ids", "suppression_component_ids", "environment_device_ids", "campfires", "torches", "dynamic_spawn_directors"]:
 		if snapshot.has(key) and typeof(snapshot[key]) != TYPE_ARRAY:
 			return false
+	if snapshot.has("resource_nodes"):
+		if typeof(snapshot["resource_nodes"]) != TYPE_ARRAY:
+			return false
+		var seen_resource_ids: Dictionary = {}
+		for raw_resource: Variant in snapshot["resource_nodes"]:
+			if not raw_resource is Dictionary:
+				return false
+			var resource_snapshot: Dictionary = raw_resource
+			var resource_id: String = String(resource_snapshot.get("entity_id", ""))
+			if resource_id.is_empty() or seen_resource_ids.has(resource_id) \
+				or not _is_integral_number(resource_snapshot.get("remaining_units")) \
+				or resource_snapshot.get("depleted") is not bool:
+				return false
+			seen_resource_ids[resource_id] = true
+	if snapshot.has("campfires"):
+		var seen_campfire_ids: Dictionary = {}
+		for raw_campfire: Variant in snapshot["campfires"]:
+			if not raw_campfire is Dictionary:
+				return false
+			var campfire_snapshot: Dictionary = raw_campfire
+			var campfire_id: String = String(campfire_snapshot.get("entity_id", ""))
+			if campfire_id.is_empty() or seen_campfire_ids.has(campfire_id) \
+				or not _is_integral_number(campfire_snapshot.get("format_version")) \
+				or not _is_numeric_value(campfire_snapshot.get("fuel_seconds")) \
+				or not _is_numeric_value(campfire_snapshot.get("stability")) \
+				or campfire_snapshot.get("lit") is not bool:
+				return false
+			if float(campfire_snapshot.get("fuel_seconds")) < 0.0 or float(campfire_snapshot.get("stability")) < 0.0 \
+				or float(campfire_snapshot.get("stability")) > 1.0:
+				return false
+			var processing_state: Variant = campfire_snapshot.get("processing_state", {})
+			if not processing_state is Dictionary:
+				return false
+			if not (processing_state as Dictionary).is_empty():
+				for processing_key: String in ["format_version", "cooking_state", "cooking_remaining", "cooking_slot", "purifying_state", "purifying_remaining", "purifying_slot"]:
+					if not (processing_state as Dictionary).has(processing_key):
+						return false
+				if int((processing_state as Dictionary).get("format_version")) != 1 \
+					or int((processing_state as Dictionary).get("cooking_state")) < 0 or int((processing_state as Dictionary).get("cooking_state")) > 3 \
+					or int((processing_state as Dictionary).get("purifying_state")) < 0 or int((processing_state as Dictionary).get("purifying_state")) > 3 \
+					or not _is_numeric_value((processing_state as Dictionary).get("cooking_remaining")) \
+					or not _is_numeric_value((processing_state as Dictionary).get("purifying_remaining")):
+					return false
+			seen_campfire_ids[campfire_id] = true
+	if snapshot.has("torches"):
+		var seen_torch_ids: Dictionary = {}
+		for raw_torch: Variant in snapshot["torches"]:
+			if not raw_torch is Dictionary:
+				return false
+			var torch_snapshot: Dictionary = raw_torch
+			var torch_id: String = String(torch_snapshot.get("entity_id", ""))
+			var remaining: Variant = torch_snapshot.get("remaining_seconds")
+			if torch_id.is_empty() or seen_torch_ids.has(torch_id) \
+				or not _is_integral_number(torch_snapshot.get("format_version")) \
+				or not _is_numeric_value(remaining) or torch_snapshot.get("lit") is not bool:
+				return false
+			if float(remaining) < 0.0 or (bool(torch_snapshot.get("lit")) and is_zero_approx(float(remaining))):
+				return false
+			seen_torch_ids[torch_id] = true
+	if snapshot.has("dynamic_spawn_directors"):
+		for raw_director: Variant in snapshot["dynamic_spawn_directors"]:
+			if not raw_director is Dictionary:
+				return false
+			var director_snapshot: Dictionary = raw_director
+			if int(director_snapshot.get("format_version", -1)) != 1 \
+				or not director_snapshot.get("director_state", {}) is Dictionary \
+				or not director_snapshot.get("entities", []) is Array:
+				return false
+			for raw_entity: Variant in director_snapshot.get("entities", []) as Array:
+				if not raw_entity is Dictionary:
+					return false
+				var entity: Dictionary = raw_entity
+				if String(entity.get("entity_id", "")).is_empty() or int(entity.get("threat_cost", 0)) < 1 \
+					or not entity.get("state", {}) is Dictionary:
+					return false
 	return true
 
 
+func _is_integral_number(value: Variant) -> bool:
+	return (value is int) or (value is float and is_finite(value) and is_equal_approx(value, floor(value)))
+
+
+func _is_numeric_value(value: Variant) -> bool:
+	return value is int or value is float
+
+
 func _validate_building_snapshot(snapshot: Dictionary) -> bool:
-	return snapshot.has("entities") and typeof(snapshot["entities"]) == TYPE_ARRAY
+	if not snapshot.has("entities") or typeof(snapshot["entities"]) != TYPE_ARRAY:
+		return false
+	var seen_ids: Dictionary = {}
+	for raw_entity: Variant in snapshot["entities"]:
+		if not raw_entity is Dictionary:
+			return false
+		var entity: Dictionary = raw_entity
+		var entity_id: String = String(entity.get("entity_id", ""))
+		if entity_id.is_empty() or seen_ids.has(entity_id):
+			return false
+		var state: Dictionary = entity.get("state", {}) as Dictionary
+		if state == null or not state.has("format_version") or not state.has("kind") or not state.has("position") or not state.has("health"):
+			return false
+		var position: Variant = state.get("position")
+		var valid_position: bool = position is Vector2 or (position is Array and (position as Array).size() == 2 \
+			and _is_numeric_value((position as Array)[0]) and _is_numeric_value((position as Array)[1]))
+		if not valid_position or not _is_numeric_value(state.get("health")):
+			return false
+		seen_ids[entity_id] = true
+	return true
 
 
-func _create_building_snapshot(_scene: Node) -> Dictionary:
-	return {"entities": []}
+func _create_building_snapshot(scene: Node) -> Dictionary:
+	var entities: Array[Dictionary] = []
+	if scene != null:
+		for node: Node in _get_scene_group_nodes(scene, "snapshot_building"):
+			if node.has_method("create_snapshot"):
+				entities.append({"entity_id": String(node.get("entity_id")), "state": node.call("create_snapshot")})
+	entities.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		return String(left.get("entity_id", "")) < String(right.get("entity_id", "")))
+	return {"entities": entities}
+
+
+func _apply_building_snapshot(scene: Node, snapshot: Dictionary) -> bool:
+	if snapshot.is_empty():
+		return true
+	var by_id: Dictionary = {}
+	for node: Node in _get_scene_group_nodes(scene, "snapshot_building"):
+		var entity_id: String = String(node.get("entity_id"))
+		if entity_id.is_empty() or by_id.has(entity_id):
+			return false
+		by_id[entity_id] = node
+	for raw_entity: Variant in snapshot.get("entities", []) as Array:
+		var entity: Dictionary = raw_entity as Dictionary
+		var entity_id: String = String(entity.get("entity_id", ""))
+		if not by_id.has(entity_id):
+			return false
+		var node: Node = by_id[entity_id]
+		if not node.has_method("restore_snapshot") or not node.call("restore_snapshot", entity.get("state", {})):
+			return false
+	return true
 
 
 func _create_interaction_snapshot(scene: Node) -> Dictionary:
 	var suppression_ids: Array[String] = []
 	var device_ids: Array[String] = []
+	var resource_snapshots: Array[Dictionary] = []
+	var campfire_snapshots: Array[Dictionary] = []
+	var torch_snapshots: Array[Dictionary] = []
+	var dynamic_director_snapshots: Array[Dictionary] = []
 	if scene != null:
 		for node: Node in _get_scene_group_nodes(scene, "snapshot_suppression_component"):
 			if not node.visible:
@@ -1484,10 +2046,32 @@ func _create_interaction_snapshot(scene: Node) -> Dictionary:
 		for node: Node in _get_scene_group_nodes(scene, "snapshot_environment_device"):
 			if node.modulate.is_equal_approx(Color(0.35, 1.0, 0.65, 1.0)):
 				device_ids.append(node.name)
+		for node: Node in _get_scene_group_nodes(scene, "persistent_resource"):
+			if node.has_method("create_snapshot"):
+				resource_snapshots.append(node.call("create_snapshot"))
+		for node: Node in _get_scene_group_nodes(scene, "snapshot_campfire"):
+			if node.has_method("create_snapshot"):
+				campfire_snapshots.append(node.call("create_snapshot"))
+		for node: Node in _get_scene_group_nodes(scene, "snapshot_torch"):
+			if node.has_method("create_snapshot"):
+				torch_snapshots.append(node.call("create_snapshot"))
+		for node: Node in _get_scene_group_nodes(scene, "snapshot_dynamic_spawn_director"):
+			if node.has_method("create_snapshot"):
+				dynamic_director_snapshots.append(node.call("create_snapshot"))
+	resource_snapshots.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		return String(left.get("entity_id", "")) < String(right.get("entity_id", "")))
+	campfire_snapshots.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		return String(left.get("entity_id", "")) < String(right.get("entity_id", "")))
+	torch_snapshots.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		return String(left.get("entity_id", "")) < String(right.get("entity_id", "")))
 	return {
 		"escape_material_ids": _collected_escape_material_ids.duplicate(),
 		"suppression_component_ids": suppression_ids,
 		"environment_device_ids": device_ids,
+		"resource_nodes": resource_snapshots,
+		"campfires": campfire_snapshots,
+		"torches": torch_snapshots,
+		"dynamic_spawn_directors": dynamic_director_snapshots,
 	}
 
 
@@ -1547,6 +2131,13 @@ func _apply_equipped_initial_buff() -> void:
 	if _run_build.apply_effect(effect_type, amount, buff_id, level):
 		for _index: int in range(level):
 			_run_buff_draft.apply_candidate(buff_id, amount)
+
+
+func _create_character_build() -> RefCounted:
+	var total_points: int = CHARACTER_ATTRIBUTES_MODEL_SCRIPT.INITIAL_POINTS + get_meta_attribute_point_bonus()
+	var attributes: RefCounted = CHARACTER_ATTRIBUTES_MODEL_SCRIPT.new(total_points)
+	var equipment: RefCounted = EQUIPMENT_MODEL_SCRIPT.new(ITEM_CATALOG_SCRIPT.new())
+	return CHARACTER_BUILD_MODEL_SCRIPT.new(attributes, equipment, self, null)
 
 
 func _emit_meta_progression_changed() -> void:

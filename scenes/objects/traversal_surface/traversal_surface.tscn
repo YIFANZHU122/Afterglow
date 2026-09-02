@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/objects/traversal_surface/traversal_surface.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
+size = Vector2(320, 160)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_blocker"]
+size = Vector2(320, 40)
+
+[node name="TraversalSurface" type="Area2D" groups=["traversal_surface"]]
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="ContextShape" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_area")
+
+[node name="Visual" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-160, -80, 160, -80, 160, 80, -160, 80)
+color = Color(0.25, 0.45, 0.32, 0.35)
+
+[node name="Blocker" type="StaticBody2D" parent="."]
+collision_layer = 2
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Blocker"]
+position = Vector2(0, -60)
+shape = SubResource("RectangleShape2D_blocker")

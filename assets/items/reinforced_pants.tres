@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_item"]
+[ext_resource type="Script" path="res://scripts/data/equipment_definition.gd" id="2_equipment"]
+
+[sub_resource type="Resource" id="EquipmentDefinition_reinforced_pants"]
+script = ExtResource("2_equipment")
+id = &"reinforced_pants"
+slot = 2
+move_speed_multiplier = 0.98
+stamina_cost_multiplier = 0.9
+
+[resource]
+script = ExtResource("1_item")
+id = &"reinforced_pants"
+display_name = "加固工装裤"
+item_type = 8
+max_stack = 1
+unit_weight = 1.7
+tags = PackedStringArray("equipment", "legs")
+equipment_definition = SubResource("EquipmentDefinition_reinforced_pants")

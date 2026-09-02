@@ -6,6 +6,8 @@ const ENCOUNTER_SPAWN_DEFINITION_SCRIPT: Script = preload("res://scripts/data/en
 const OBJECTIVE_PROGRESS_MODEL_SCRIPT: Script = preload("res://scripts/world/objective_progress_model.gd")
 const THREAT_BUDGET_MODEL_SCRIPT: Script = preload("res://scripts/world/threat_budget_model.gd")
 const SPAWN_PROTECTION_MODEL_SCRIPT: Script = preload("res://scripts/world/spawn_protection_model.gd")
+const DROP_BUDGET_MODEL_SCRIPT: Script = preload("res://scripts/items/drop_budget_model.gd")
+const ENEMY_DROP_SERVICE_SCRIPT: Script = preload("res://scripts/items/enemy_drop_service.gd")
 
 const PIXELS_PER_STEP: float = 40.0
 
@@ -19,6 +21,9 @@ var _spawn_protection: RefCounted
 var _protected_points: Array[Vector2] = []
 var _started: bool = false
 var _completed_emitted: bool = false
+var _drop_budget: RefCounted
+var _drop_service: RefCounted
+var _content_root: Node2D
 
 
 func set_protected_points(points: Array[Vector2]) -> void:
@@ -43,6 +48,9 @@ func start(encounter_definition: Resource, content_root: Node2D) -> bool:
 	if encounter_definition.get_script() != ENCOUNTER_DEFINITION_SCRIPT:
 		return false
 	_started = true
+	_content_root = content_root
+	_drop_budget = DROP_BUDGET_MODEL_SCRIPT.new(3, 8, 2)
+	_drop_service = ENEMY_DROP_SERVICE_SCRIPT.new()
 	_threat_budget = THREAT_BUDGET_MODEL_SCRIPT.new(GameManager.get_floor_day_index(), GameManager.get_overtime_stage())
 	_spawn_protection = SPAWN_PROTECTION_MODEL_SCRIPT.new()
 	var valid_members: int = 0
@@ -81,7 +89,7 @@ func start(encounter_definition: Resource, content_root: Node2D) -> bool:
 			entity.queue_free()
 			continue
 		entity.name = "EncounterEntity%d" % valid_members
-		member.defeated.connect(_on_member_defeated.bind(threat_cost))
+		member.defeated.connect(_on_member_defeated.bind(entity, threat_cost))
 		content_root.add_child(entity)
 		entity.position = spawn.get("spawn_position")
 		valid_members += 1
@@ -100,14 +108,24 @@ func get_completed_count() -> int:
 	return _progress.get_completed_count() if _progress != null else 0
 
 
-func _on_member_defeated(reward_xp: int, threat_cost: int) -> void:
+func _on_member_defeated(reward_xp: int, entity: Node2D, threat_cost: int) -> void:
 	if _progress == null or not _progress.register_completion():
 		return
 	_threat_budget.call("release_spawn", threat_cost)
+	_spawn_drops(entity)
 	reward_earned.emit(maxi(reward_xp, 0))
 	_emit_progress()
 	if _progress.is_complete():
 		_emit_completed()
+
+
+func _spawn_drops(entity: Node2D) -> void:
+	if _drop_service == null or _drop_budget == null or entity == null:
+		return
+	var food_roll: float = GameManager.random_float(&"enemy_food") if GameManager.has_method("random_float") else 1.0
+	var material_roll: float = GameManager.random_float(&"enemy_material") if GameManager.has_method("random_float") else 1.0
+	var crystal_roll: float = GameManager.random_float(&"enemy_crystal") if GameManager.has_method("random_float") else 1.0
+	_drop_service.spawn_for_enemy(_content_root, entity.global_position, 0, _drop_budget, food_roll, material_roll, crystal_roll)
 
 
 func _emit_progress() -> void:

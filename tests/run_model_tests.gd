@@ -7,6 +7,12 @@ const INVENTORY_MODEL_SCRIPT: Script = preload("res://scripts/items/inventory_mo
 const MELEE_ATTACK_MODEL_SCRIPT: Script = preload("res://scripts/combat/melee_attack_model.gd")
 const REVIVE_MODEL_SCRIPT: Script = preload("res://scripts/progression/revive_model.gd")
 const ITEM_DATA_SCRIPT: Script = preload("res://scripts/item_data.gd")
+const ITEM_STACK_MODEL_SCRIPT: Script = preload("res://scripts/items/item_stack_model.gd")
+const ITEM_CATALOG_SCRIPT: Script = preload("res://scripts/items/item_catalog.gd")
+const WORLD_RESOURCE_DEFINITION_SCRIPT: Script = preload("res://scripts/data/world_resource_definition.gd")
+const GATHERABLE_RESOURCE_MODEL_SCRIPT: Script = preload("res://scripts/world/gatherable_resource_model.gd")
+const SURVIVAL_CONSUMPTION_MODEL_SCRIPT: Script = preload("res://scripts/player/survival_consumption_model.gd")
+const WATER_CONTAINER_MODEL_SCRIPT: Script = preload("res://scripts/items/water_container_model.gd")
 const RUN_SESSION_MODEL_SCRIPT: Script = preload("res://scripts/core/run_session_model.gd")
 const RUN_RANDOM_STREAM_MODEL_SCRIPT: Script = preload("res://scripts/core/run_random_stream_model.gd")
 const BOSS_PROGRESS_MODEL_SCRIPT: Script = preload("res://scripts/combat/boss_progress_model.gd")
@@ -32,6 +38,45 @@ const ENEMY_PERCEPTION_MODEL_SCRIPT: Script = preload("res://scripts/combat/enem
 const DISASTER_EVENT_MODEL_SCRIPT: Script = preload("res://scripts/world/disaster_event_model.gd")
 const META_PROGRESSION_MODEL_SCRIPT: Script = preload("res://scripts/progression/meta_progression_model.gd")
 const RUN_BUFF_DRAFT_MODEL_SCRIPT: Script = preload("res://scripts/progression/run_buff_draft_model.gd")
+const RECIPE_INGREDIENT_SCRIPT: Script = preload("res://scripts/data/recipe_ingredient.gd")
+const RECIPE_DEFINITION_SCRIPT: Script = preload("res://scripts/data/recipe_definition.gd")
+const CRAFTING_MODEL_SCRIPT: Script = preload("res://scripts/items/crafting_model.gd")
+const CAMPFIRE_MODEL_SCRIPT: Script = preload("res://scripts/world/campfire_model.gd")
+const TORCH_MODEL_SCRIPT: Script = preload("res://scripts/items/torch_model.gd")
+const PROCESSING_STATION_MODEL_SCRIPT: Script = preload("res://scripts/items/processing_station_model.gd")
+const BUILDING_MODEL_SCRIPT: Script = preload("res://scripts/world/building_model.gd")
+const NIGHT_FOG_MODEL_SCRIPT: Script = preload("res://scripts/world/night_fog_model.gd")
+const MOON_CYCLE_MODEL_SCRIPT: Script = preload("res://scripts/world/moon_cycle_model.gd")
+const DARKNESS_MARK_MODEL_SCRIPT: Script = preload("res://scripts/world/darkness_mark_model.gd")
+const DYNAMIC_SPAWN_POINT_SCRIPT: Script = preload("res://scripts/data/dynamic_spawn_point_definition.gd")
+const DYNAMIC_SPAWN_DIRECTOR_SCRIPT: Script = preload("res://scripts/world/dynamic_spawn_director_model.gd")
+const CHARACTER_ATTRIBUTES_MODEL_SCRIPT: Script = preload("res://scripts/progression/character_attributes_model.gd")
+const EQUIPMENT_MODEL_SCRIPT: Script = preload("res://scripts/items/equipment_model.gd")
+const ENCUMBRANCE_MODEL_SCRIPT: Script = preload("res://scripts/player/encumbrance_model.gd")
+const CHARACTER_BUILD_MODEL_SCRIPT: Script = preload("res://scripts/progression/character_build_model.gd")
+const EQUIPMENT_DEFINITION_SCRIPT: Script = preload("res://scripts/data/equipment_definition.gd")
+const EQUIPMENT_INTERACTION_MODEL_SCRIPT: Script = preload("res://scripts/player/equipment_interaction_model.gd")
+const STEP_TERRAIN_MODEL_SCRIPT: Script = preload("res://scripts/world/step_terrain_model.gd")
+const VAULT_ACTION_MODEL_SCRIPT: Script = preload("res://scripts/player/vault_action_model.gd")
+const DIGGING_MODEL_SCRIPT: Script = preload("res://scripts/world/digging_model.gd")
+const WATER_TRAVERSAL_MODEL_SCRIPT: Script = preload("res://scripts/player/water_traversal_model.gd")
+const ROUTE_VALIDATION_MODEL_SCRIPT: Script = preload("res://scripts/world/route_validation_model.gd")
+const ENVIRONMENT_EFFECT_RESOLVER_SCRIPT: Script = preload("res://scripts/world/environment_effect_resolver.gd")
+const DISASTER_COUNTERMEASURE_MODEL_SCRIPT: Script = preload("res://scripts/world/disaster_countermeasure_model.gd")
+const REGION_PROFILE_MODEL_SCRIPT: Script = preload("res://scripts/world/region_profile_model.gd")
+const REGION_ROUTE_MODEL_SCRIPT: Script = preload("res://scripts/world/region_route_model.gd")
+const RELEASE_READINESS_MODEL_SCRIPT: Script = preload("res://scripts/core/release_readiness_model.gd")
+const ACCESSIBILITY_SETTINGS_MODEL_SCRIPT: Script = preload("res://scripts/presentation/accessibility_settings_model.gd")
+const LOCAL_TELEMETRY_MODEL_SCRIPT: Script = preload("res://scripts/core/local_telemetry_model.gd")
+const PLAN036_RECIPE_PATHS: PackedStringArray = [
+	"res://assets/recipes/torch.tres",
+	"res://assets/recipes/stone_knife.tres",
+	"res://assets/recipes/simple_bandage.tres",
+	"res://assets/recipes/temporary_container.tres",
+	"res://assets/recipes/campfire.tres",
+	"res://assets/recipes/rain_shelter.tres",
+	"res://assets/recipes/wood_wall.tres",
+]
 
 const MOVE_STATE_WALKING: int = 0
 const MOVE_STATE_RUNNING: int = 1
@@ -53,6 +98,11 @@ func _init() -> void:
 	_run_stamina_model_tests()
 	_run_player_command_tests()
 	_run_inventory_model_tests()
+	_run_item_stack_model_tests()
+	_run_item_catalog_tests()
+	_run_gatherable_resource_model_tests()
+	_run_survival_consumption_model_tests()
+	_run_water_container_model_tests()
 	_run_melee_attack_model_tests()
 	_run_revive_model_tests()
 	_run_session_model_tests()
@@ -76,6 +126,20 @@ func _init() -> void:
 	_run_disaster_event_model_tests()
 	_run_meta_progression_model_tests()
 	_run_run_buff_draft_model_tests()
+	_run_crafting_model_tests()
+	_run_plan036_recipe_tests()
+	_run_campfire_model_tests()
+	_run_torch_model_tests()
+	_run_processing_station_model_tests()
+	_run_building_model_tests()
+	_run_night_fog_and_moon_model_tests()
+	_run_dynamic_spawn_director_model_tests()
+	_run_plan038_model_tests()
+	_run_plan039_model_tests()
+	_run_plan040_model_tests()
+	_run_plan041_model_tests()
+	_run_plan042_model_tests()
+	_run_plan043_model_tests()
 	if _failures == 0:
 		print("Model tests passed")
 	else:
@@ -165,6 +229,8 @@ func _run_player_command_tests() -> void:
 	_assert_equal(command.cycle_delta, 0, "command defaults to no slot cycling")
 	_assert_equal(command.selected_slot, -1, "command defaults to no direct slot selection")
 	_assert_true(not command.drop_pressed, "command defaults to no drop")
+	_assert_true(not command.use_pressed, "command defaults to no item use")
+	_assert_true(not command.vault_pressed and not command.dig_pressed, "command defaults to no traversal actions")
 
 	var populated = PLAYER_COMMAND_SCRIPT.new(Vector2.RIGHT, true, true, -1, 4, true)
 	_assert_equal(populated.move_direction, Vector2.RIGHT, "command stores movement intent")
@@ -173,6 +239,10 @@ func _run_player_command_tests() -> void:
 	_assert_equal(populated.cycle_delta, -1, "command stores previous-slot intent")
 	_assert_equal(populated.selected_slot, 4, "command stores direct slot intent")
 	_assert_true(populated.drop_pressed, "command stores drop edge")
+	var use_command = PLAYER_COMMAND_SCRIPT.new(Vector2.ZERO, false, false, 0, -1, false, true)
+	_assert_true(use_command.use_pressed, "command stores item use intent")
+	var traversal_command = PLAYER_COMMAND_SCRIPT.new(Vector2.ZERO, false, false, 0, -1, false, false, true, true)
+	_assert_true(traversal_command.vault_pressed and traversal_command.dig_pressed, "command stores traversal intents")
 
 	var clamped = PLAYER_COMMAND_SCRIPT.new(Vector2(2.0, 0.0), false, false, 8, -5, false)
 	_assert_equal(clamped.move_direction, Vector2.RIGHT, "command clamps movement length")
@@ -181,23 +251,625 @@ func _run_player_command_tests() -> void:
 
 
 func _run_inventory_model_tests() -> void:
-	var model = INVENTORY_MODEL_SCRIPT.new(2)
-	var sword = ITEM_DATA_SCRIPT.new()
-	sword.item_type = 1
-	sword.attack_damage = 10.0
-	_assert_true(model.add_item(sword), "inventory accepts the first item")
-	_assert_equal(model.get_selected_item(), sword, "inventory exposes selected item")
+	var catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+	var model: RefCounted = INVENTORY_MODEL_SCRIPT.new(8, catalog)
+	var wood: ItemData = catalog.get_item(&"wood")
+	var sword: ItemData = catalog.get_item(&"stone_sword")
+	_assert_equal(model.get_slot_count(), 8, "inventory defaults to eight slots")
+	_assert_equal(model.get_occupied_slot_count(), 0, "inventory starts with no occupied slots")
+	_assert_true(model.add_quantity(wood, 14), "fourteen wood fits as ten plus four")
+	_assert_equal(model.get_stacks()[0].get_quantity(), 10, "first stack fills first")
+	_assert_equal(model.get_stacks()[1].get_quantity(), 4, "overflow uses next slot")
+	_assert_approx(model.get_total_weight(), 7.0, "inventory calculates total weight")
+	_assert_true(model.add_item(sword), "legacy add_item accepts a quantity-one sword")
+	_assert_equal(model.get_occupied_slot_count(), 3, "inventory counts occupied stacks")
+	var shovel: ItemData = catalog.get_item(&"shovel")
+	_assert_true(model.add_item(shovel), "inventory accepts a durable shovel")
+	_assert_true(model.set_selected_slot(3), "inventory selects the durable shovel slot")
+	_assert_equal(model.get_selected_stack().get_durability(), 20, "durable tools start at maximum durability")
+	_assert_true(model.damage_selected_durability(3), "inventory can consume tool durability")
+	_assert_equal(model.get_selected_stack().get_durability(), 17, "tool durability decreases without changing the slot")
+	_assert_true(model.set_selected_slot(0), "inventory returns to the first slot after tool durability checks")
+	_assert_equal(model.get_selected_item(), wood, "inventory exposes selected item definition")
+	_assert_true(not model.add_quantity(wood, 70), "insufficient space rejects the whole addition")
+	_assert_equal(model.get_stacks()[0].get_quantity(), 10, "failed addition does not mutate existing stacks")
 	_assert_true(not model.set_selected_slot(-1), "inventory rejects negative slot")
-	_assert_true(model.set_selected_slot(1), "inventory selects a valid slot")
-	_assert_true(model.add_item(sword), "inventory accepts the second item")
-	_assert_true(not model.add_item(sword), "full inventory rejects another item")
-	_assert_true(model.cycle_selected(-1), "inventory cycles selected slot")
+	_assert_true(model.set_selected_slot(7), "inventory selects the eighth slot")
+	_assert_true(model.cycle_selected(1), "inventory cycles selected slot")
 	_assert_equal(model.get_selected_slot(), 0, "inventory cycle wraps to first slot")
-	_assert_equal(model.drop_selected(), sword, "inventory drops selected item")
+	var dropped: RefCounted = model.drop_selected()
+	_assert_equal(dropped.get_quantity(), 10, "drop_selected returns the complete stack")
 	_assert_equal(model.drop_selected(), null, "empty selected slot returns null")
-	var dropped: Array = model.drop_all()
-	_assert_equal(dropped.size(), 1, "drop_all returns remaining items")
-	_assert_equal(model.get_items()[0], null, "drop_all clears all slots")
+	var all_dropped: Array = model.drop_all()
+	_assert_equal(all_dropped.size(), 3, "drop_all returns remaining stacks including the durable tool")
+	_assert_true(model.get_items().all(func(item: Variant) -> bool: return item == null), "drop_all clears all slots")
+	var capacity_model: RefCounted = INVENTORY_MODEL_SCRIPT.new(8, catalog)
+	_assert_true(capacity_model.add_quantity(wood, 11), "capacity test fills a second slot before expansion")
+	_assert_true(capacity_model.configure_slot_count(10), "inventory can expand without losing items")
+	_assert_equal(capacity_model.get_slot_count(), 10, "inventory expansion exposes the new capacity")
+	_assert_true(not capacity_model.configure_slot_count(1), "inventory shrink rejects occupied slots")
+
+	var legacy_model: RefCounted = INVENTORY_MODEL_SCRIPT.new(8, catalog)
+	_assert_true(legacy_model.restore_snapshot({
+		"slot_count": 8,
+		"selected_slot": 2,
+		"items": [
+			{"id": "wood", "display_name": "旧木材", "item_type": 3, "attack_damage": 0.0},
+			{}, {}, {}, {}, {}, {}, {},
+		]
+	}), "inventory restores schema-version-one snapshot")
+	_assert_equal(legacy_model.get_stacks()[0].get_quantity(), 1, "legacy item becomes quantity-one stack")
+	_assert_equal(legacy_model.get_selected_slot(), 2, "legacy selected slot is preserved")
+	var current_snapshot: Dictionary = legacy_model.create_snapshot()
+	_assert_equal(current_snapshot.get("format_version"), 2, "inventory snapshot uses version two")
+	var restored_model: RefCounted = INVENTORY_MODEL_SCRIPT.new(8, catalog)
+	_assert_true(restored_model.restore_snapshot(current_snapshot), "inventory restores current snapshot")
+	_assert_equal(restored_model.get_stacks()[0].get_quantity(), 1, "current snapshot keeps stack quantity")
+	var before_invalid: Dictionary = restored_model.create_snapshot()
+	_assert_true(not restored_model.restore_snapshot({"format_version": 2, "slot_count": 8, "selected_slot": 0, "stacks": [{"format_version": 1, "item_id": "unknown", "quantity": 1, "durability": -1}]}), "unknown item snapshot is rejected")
+	_assert_equal(restored_model.create_snapshot(), before_invalid, "invalid restore leaves inventory unchanged")
+
+
+func _run_item_stack_model_tests() -> void:
+	var wood: ItemData = ITEM_DATA_SCRIPT.new()
+	wood.id = &"wood"
+	wood.display_name = "木材"
+	wood.item_type = ItemData.ItemType.MATERIAL
+	wood.max_stack = 10
+	wood.unit_weight = 0.5
+	_assert_true(wood.is_valid(), "wood definition is valid")
+	var stack: RefCounted = ITEM_STACK_MODEL_SCRIPT.new()
+	_assert_true(stack.setup(wood, 4), "stack accepts a valid quantity")
+	_assert_equal(stack.get_quantity(), 4, "stack exposes quantity")
+	_assert_approx(stack.get_total_weight(), 2.0, "stack calculates total weight")
+	_assert_equal(stack.get_available_capacity(), 6, "stack exposes available capacity")
+	_assert_true(not ITEM_STACK_MODEL_SCRIPT.new().setup(wood, 0), "stack rejects zero quantity")
+	_assert_true(not ITEM_STACK_MODEL_SCRIPT.new().setup(wood, 11), "stack rejects quantity above max")
+	wood.unit_weight = -1.0
+	_assert_true(not wood.is_valid(), "item rejects negative weight")
+	wood.unit_weight = 0.5
+	wood.max_durability = 20
+	_assert_true(ITEM_STACK_MODEL_SCRIPT.new().setup(wood, 1, 10), "durable stack accepts in-range durability")
+	_assert_true(not ITEM_STACK_MODEL_SCRIPT.new().setup(wood, 2, 10), "durable stack rejects quantity greater than one")
+	_assert_true(not ITEM_STACK_MODEL_SCRIPT.new().setup(wood, 1, 21), "stack rejects durability above maximum")
+	wood.max_durability = 0
+	var snapshot: Dictionary = stack.create_snapshot()
+	_assert_equal(snapshot.get("format_version"), 2, "stack snapshot has a format version")
+	_assert_equal(snapshot.get("item_id"), "wood", "stack snapshot stores stable item id")
+	var catalog = _TestItemCatalog.new(wood)
+	var restored: RefCounted = ITEM_STACK_MODEL_SCRIPT.new()
+	_assert_true(restored.restore_snapshot(snapshot, catalog), "stack restores from catalog")
+	_assert_equal(restored.get_quantity(), 4, "restored stack keeps quantity")
+	_assert_true(not ITEM_STACK_MODEL_SCRIPT.new().restore_snapshot(snapshot, _TestItemCatalog.new()), "unknown item id is rejected")
+	_assert_true(not ITEM_STACK_MODEL_SCRIPT.new().restore_snapshot({"format_version": 1, "item_id": "wood", "quantity": 1.5, "durability": -1}, catalog), "non-integral quantity is rejected")
+	_assert_true(not ITEM_STACK_MODEL_SCRIPT.new().restore_snapshot({"format_version": 1, "item_id": "wood", "quantity": 1, "durability": "bad"}, catalog), "malformed durability is rejected")
+	var runtime_catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+	var container_item: ItemData = runtime_catalog.get_item(&"medium_container")
+	var container_stack: RefCounted = ITEM_STACK_MODEL_SCRIPT.new()
+	_assert_true(container_stack.setup(container_item, 1), "container stack creates runtime contents")
+	_assert_true(container_stack.fill_container(WATER_CONTAINER_MODEL_SCRIPT.Source.RAIN, 2, false), "container stack fills runtime contents")
+	_assert_equal(container_stack.get_container_snapshot().get("amount"), 2, "container stack exposes filled amount")
+	var container_snapshot: Dictionary = container_stack.create_snapshot()
+	var restored_container_stack: RefCounted = ITEM_STACK_MODEL_SCRIPT.new()
+	_assert_true(restored_container_stack.restore_snapshot(container_snapshot, runtime_catalog), "container stack restores runtime contents")
+	_assert_equal(restored_container_stack.get_container_snapshot().get("amount"), 2, "restored container keeps runtime amount")
+
+
+class _TestItemCatalog extends RefCounted:
+	var _item: ItemData
+
+	func _init(item: ItemData = null) -> void:
+		_item = item
+
+	func get_item(item_id: StringName) -> ItemData:
+		if _item != null and _item.id == item_id:
+			return _item
+		return null
+
+
+func _run_item_catalog_tests() -> void:
+	var catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+	_assert_true(catalog.is_valid(), "default item catalog is valid")
+	_assert_equal(catalog.get_all_items().size(), 31, "catalog exposes survival items, weapons, building kits, traversal tools, and equipment")
+	for item_id: StringName in [&"stone_sword", &"wood", &"stone", &"wild_food", &"scrap_parts"]:
+		_assert_true(catalog.get_item(item_id) != null, "catalog resolves %s" % item_id)
+	_assert_true(catalog.get_item(&"handmade_pistol") != null, "catalog resolves the graybox firearm")
+	_assert_true(catalog.get_item(&"pistol_ammo") != null, "catalog resolves firearm ammunition")
+	_assert_equal(catalog.get_item(&"missing"), null, "unknown item id returns null")
+	var duplicate_item: ItemData = ITEM_DATA_SCRIPT.new()
+	duplicate_item.id = &"duplicate"
+	duplicate_item.display_name = "重复"
+	var duplicate_catalog: RefCounted = ITEM_CATALOG_SCRIPT.new([duplicate_item, duplicate_item])
+	_assert_true(not duplicate_catalog.is_valid(), "catalog rejects duplicate item ids")
+	var invalid_item: ItemData = ITEM_DATA_SCRIPT.new()
+	invalid_item.id = &"invalid"
+	invalid_item.display_name = "非法"
+	invalid_item.max_stack = 2
+	invalid_item.max_durability = 10
+	var invalid_catalog: RefCounted = ITEM_CATALOG_SCRIPT.new([invalid_item])
+	_assert_true(not invalid_catalog.is_valid(), "catalog rejects stackable durable items")
+
+
+func _run_gatherable_resource_model_tests() -> void:
+	var catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+	var definition: Resource = WORLD_RESOURCE_DEFINITION_SCRIPT.new()
+	definition.id = &"test_wood_node"
+	definition.display_name = "测试木材"
+	definition.output_item = catalog.get_item(&"wood")
+	definition.base_units = 5
+	definition.gather_amount = 2
+	_assert_true(definition.is_valid(), "gatherable resource definition is valid")
+	var normal: RefCounted = GATHERABLE_RESOURCE_MODEL_SCRIPT.new(definition, SURVIVAL_TUNING_SCRIPT.Difficulty.NORMAL)
+	_assert_equal(normal.get_remaining_units(), 5, "normal resource keeps base units")
+	_assert_equal(normal.gather_once(), 2, "gather returns configured amount")
+	_assert_equal(normal.get_remaining_units(), 3, "gather decrements remaining units")
+	_assert_equal(normal.gather_once(), 2, "second gather returns configured amount")
+	_assert_equal(normal.gather_once(), 1, "final gather returns partial amount")
+	_assert_true(normal.is_depleted(), "resource becomes depleted at zero")
+	_assert_equal(normal.gather_once(), 0, "depleted resource rejects repeated gather")
+	var normal_fresh: RefCounted = GATHERABLE_RESOURCE_MODEL_SCRIPT.new(definition, SURVIVAL_TUNING_SCRIPT.Difficulty.NORMAL)
+	var hard: RefCounted = GATHERABLE_RESOURCE_MODEL_SCRIPT.new(definition, SURVIVAL_TUNING_SCRIPT.Difficulty.HARD)
+	var hell: RefCounted = GATHERABLE_RESOURCE_MODEL_SCRIPT.new(definition, SURVIVAL_TUNING_SCRIPT.Difficulty.HELL)
+	_assert_true(normal_fresh.get_remaining_units() >= hard.get_remaining_units(), "hard richness does not exceed normal")
+	_assert_true(hard.get_remaining_units() >= hell.get_remaining_units(), "hell richness does not exceed hard")
+	var snapshot: Dictionary = hard.create_snapshot()
+	var restored: RefCounted = GATHERABLE_RESOURCE_MODEL_SCRIPT.new(definition, SURVIVAL_TUNING_SCRIPT.Difficulty.NORMAL)
+	_assert_true(restored.restore_snapshot(snapshot), "resource restores a valid snapshot")
+	_assert_equal(restored.get_remaining_units(), hard.get_remaining_units(), "resource snapshot keeps remaining units")
+	_assert_true(not restored.restore_snapshot({"entity_id": "wrong", "remaining_units": 1, "depleted": false}), "resource rejects wrong entity id")
+
+
+func _run_survival_consumption_model_tests() -> void:
+	var vitals: RefCounted = SURVIVAL_VITALS_MODEL_SCRIPT.new(10.0, 10.0)
+	var model: RefCounted = SURVIVAL_CONSUMPTION_MODEL_SCRIPT.new()
+	var raw_meat: ItemData = ITEM_DATA_SCRIPT.new()
+	raw_meat.id = &"raw_meat"
+	raw_meat.display_name = "生肉"
+	raw_meat.item_type = ItemData.ItemType.FOOD
+	raw_meat.max_stack = 3
+	raw_meat.food_restore = 8.0
+	raw_meat.is_raw_food = true
+	raw_meat.disease_chance = 1.0
+	_assert_true(model.consume_food(raw_meat, vitals, 0.0), "food consumption succeeds")
+	_assert_equal(vitals.get_hunger(), 18.0, "food restores hunger")
+	_assert_true(model.has_disease(), "raw food can trigger disease")
+	var disease_duration: float = model.get_disease_remaining_seconds()
+	_assert_true(disease_duration > 0.0, "disease has a finite duration")
+	_assert_true(model.consume_food(raw_meat, vitals, 1.0), "repeat food consumption succeeds")
+	_assert_true(model.get_disease_remaining_seconds() >= disease_duration, "disease refreshes instead of stacking")
+	model.tick(model.get_disease_remaining_seconds())
+	_assert_true(not model.has_disease(), "disease naturally expires")
+	_assert_true(not model.consume_food(null, vitals, 0.0), "null food is rejected")
+	var snapshot: Dictionary = model.create_snapshot()
+	var restored: RefCounted = SURVIVAL_CONSUMPTION_MODEL_SCRIPT.new()
+	_assert_true(restored.restore_snapshot(snapshot), "disease snapshot restores")
+	_assert_true(not restored.restore_snapshot({"disease_kind": "water_source"}), "malformed disease snapshot is rejected")
+
+
+func _run_water_container_model_tests() -> void:
+	var container: RefCounted = WATER_CONTAINER_MODEL_SCRIPT.new(3)
+	_assert_equal(container.get_capacity(), 3, "container stores its capacity")
+	_assert_true(container.fill(WATER_CONTAINER_MODEL_SCRIPT.Source.RAIN, 2, true), "container fills purified rain water")
+	_assert_equal(container.get_amount(), 2, "container tracks water amount")
+	_assert_true(not container.fill(WATER_CONTAINER_MODEL_SCRIPT.Source.PUDDLE, 1, false), "container rejects mixed source and purity")
+	_assert_true(container.consume(1), "container consumes one water unit")
+	_assert_equal(container.get_amount(), 1, "container decrements water amount")
+	var snapshot: Dictionary = container.create_snapshot()
+	var restored: RefCounted = WATER_CONTAINER_MODEL_SCRIPT.new(1)
+	_assert_true(restored.restore_snapshot(snapshot), "container snapshot restores capacity and contents")
+	_assert_equal(restored.get_capacity(), 3, "restored container keeps capacity")
+	_assert_true(not restored.restore_snapshot({"capacity": 3, "amount": 4, "source": 1, "purified": true}), "container rejects overflow snapshot")
+	var inventory_catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+	var inventory: RefCounted = INVENTORY_MODEL_SCRIPT.new(3, inventory_catalog)
+	var empty: ItemData = inventory_catalog.get_item(&"empty_container")
+	var medium: ItemData = inventory_catalog.get_item(&"medium_container")
+	_assert_true(inventory.add_item(empty), "inventory accepts an empty container")
+	_assert_true(inventory.fill_selected_container(WATER_CONTAINER_MODEL_SCRIPT.Source.FLOWING, 1, false), "inventory fills selected container")
+	_assert_equal(inventory.get_selected_container_snapshot().get("amount"), 1, "inventory exposes selected water amount")
+	_assert_true(inventory.consume_selected_water(), "inventory drinks one selected water unit")
+	_assert_equal(inventory.get_selected_container_snapshot().get("amount"), 0, "drinking empties the selected container")
+	_assert_true(inventory.add_item(medium), "inventory accepts a second container")
+	_assert_true(inventory.set_selected_slot(1), "inventory selects the second container")
+	_assert_true(inventory.fill_selected_container(WATER_CONTAINER_MODEL_SCRIPT.Source.RAIN, 2, true), "inventory fills the second container")
+	_assert_true(inventory.transfer_water(1, 0, 1), "inventory transfers water between containers")
+	_assert_equal(inventory.get_stack_at(0).get_container_snapshot().get("amount"), 1, "target container receives transferred water")
+
+
+func _run_crafting_model_tests() -> void:
+	var catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+	var ingredient = RECIPE_INGREDIENT_SCRIPT.new()
+	ingredient.item = catalog.get_item(&"wood")
+	ingredient.quantity = 2
+	_assert_true(ingredient.is_valid(), "recipe ingredient validates item and quantity")
+	var recipe = RECIPE_DEFINITION_SCRIPT.new()
+	recipe.id = &"test_torch"
+	recipe.display_name = "测试火把"
+	recipe.output_item = catalog.get_item(&"wood")
+	recipe.output_quantity = 1
+	var ingredients: Array[Resource] = [ingredient]
+	recipe.set("ingredients", ingredients)
+	recipe.craft_time_seconds = 4.0
+	_assert_true(recipe.is_valid(), "recipe definition validates a complete recipe")
+	var inventory: RefCounted = INVENTORY_MODEL_SCRIPT.new(3, catalog)
+	_assert_true(inventory.add_quantity(catalog.get_item(&"wood"), 2), "crafting test inventory receives ingredients")
+	var crafting: RefCounted = CRAFTING_MODEL_SCRIPT.new()
+	_assert_true(crafting.begin(recipe, inventory), "crafting starts when ingredients and output space are available")
+	_assert_equal(inventory.get_items()[0], null, "crafting locks ingredients at start")
+	_assert_true(crafting.advance(1.0, false, false, true), "crafting advances while uninterrupted")
+	_assert_true(not crafting.is_complete(), "crafting remains active before its duration")
+	_assert_true(not crafting.advance(1.0, true, false, true), "movement interrupts crafting")
+	_assert_true(crafting.is_interrupted(), "interrupted crafting enters interrupted state")
+	_assert_equal(inventory.get_stacks()[0].get_quantity(), 2, "interrupted crafting refunds locked ingredients")
+	_assert_true(crafting.begin(recipe, inventory), "interrupted task can be restarted")
+	_assert_true(crafting.advance(4.0, false, false, true), "crafting completes after its duration")
+	_assert_true(crafting.is_complete(), "completed crafting enters complete state")
+	_assert_equal(inventory.get_stacks()[0].get_quantity(), 1, "completed crafting adds its output")
+	_assert_true(not crafting.begin(recipe, inventory), "completed crafting rejects duplicate completion")
+
+
+func _run_plan036_recipe_tests() -> void:
+	for path: String in PLAN036_RECIPE_PATHS:
+		var recipe: Resource = load(path) as Resource
+		_assert_true(recipe != null and recipe.get_script() == RECIPE_DEFINITION_SCRIPT, "plan036 recipe loads with its typed resource script: %s" % path)
+		if recipe != null:
+			_assert_true(recipe.is_valid(), "plan036 recipe satisfies the recipe contract: %s" % path)
+	var catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+	var inventory: RefCounted = INVENTORY_MODEL_SCRIPT.new(4, catalog)
+	_assert_true(inventory.add_quantity(catalog.get_item(&"wood"), 1), "full crafting flow gathers wood")
+	_assert_true(inventory.add_quantity(catalog.get_item(&"scrap_parts"), 1), "full crafting flow gathers scrap")
+	var torch_recipe: Resource = load("res://assets/recipes/torch.tres") as Resource
+	var crafting: RefCounted = CRAFTING_MODEL_SCRIPT.new()
+	_assert_true(crafting.begin(torch_recipe, inventory), "full crafting flow starts a torch recipe")
+	_assert_true(crafting.advance(4.0, false, false, true), "full crafting flow completes the torch recipe")
+	var has_torch: bool = false
+	for stack: RefCounted in inventory.get_stacks():
+		if stack != null and stack.get_definition().id == &"torch":
+			has_torch = true
+	_assert_true(has_torch, "full crafting flow produces the torch output")
+
+
+func _run_campfire_model_tests() -> void:
+	var campfire: RefCounted = CAMPFIRE_MODEL_SCRIPT.new()
+	_assert_true(not campfire.is_lit(), "campfire starts unlit")
+	_assert_true(campfire.add_fuel(120.0), "campfire accepts positive fuel")
+	_assert_true(campfire.ignite(CAMPFIRE_MODEL_SCRIPT.IgnitionMethod.LIGHTER, 1.0), "lighter ignition always succeeds")
+	_assert_true(campfire.is_lit(), "successful ignition lights the campfire")
+	var fuel_before_rain: float = campfire.get_fuel_seconds()
+	_assert_true(campfire.advance(10.0, CAMPFIRE_MODEL_SCRIPT.Weather.RAIN, false), "campfire advances during rain")
+	_assert_approx(fuel_before_rain - campfire.get_fuel_seconds(), 15.0, "rain increases fuel burn to one point five times")
+	_assert_true(campfire.extinguish(), "lit campfire can be extinguished")
+	_assert_true(not campfire.is_lit(), "extinguishing clears lit state")
+	_assert_true(not campfire.ignite(CAMPFIRE_MODEL_SCRIPT.IgnitionMethod.STONE, 0.3), "stone ignition fails at the threshold")
+	_assert_true(campfire.ignite(CAMPFIRE_MODEL_SCRIPT.IgnitionMethod.STONE, 0.2), "stone ignition succeeds below thirty percent")
+	_assert_true(campfire.take_damage(60.0), "campfire stability can be damaged")
+	_assert_true(campfire.get_stability() < 1.0, "campfire stability decreases after damage")
+	var snapshot: Dictionary = campfire.create_snapshot()
+	var restored: RefCounted = CAMPFIRE_MODEL_SCRIPT.new()
+	_assert_true(restored.restore_snapshot(snapshot), "campfire snapshot restores fuel and state")
+	_assert_equal(restored.is_lit(), campfire.is_lit(), "restored campfire keeps ignition state")
+
+
+func _run_torch_model_tests() -> void:
+	var torch: RefCounted = TORCH_MODEL_SCRIPT.new(30.0)
+	_assert_true(not torch.is_lit(), "torch starts unlit")
+	_assert_true(torch.ignite_with_lighter(), "torch can be lit by lighter")
+	_assert_true(torch.is_lit(), "lit torch reports active state")
+	_assert_true(torch.advance(5.0), "torch consumes burn time while lit")
+	_assert_approx(torch.get_remaining_seconds(), 25.0, "torch keeps remaining burn time")
+	_assert_true(torch.extinguish(), "torch can be extinguished")
+	_assert_true(not torch.is_lit(), "extinguishing clears torch state")
+	_assert_true(torch.ignite_from_campfire(), "torch can be lit from a campfire")
+	var snapshot: Dictionary = torch.create_snapshot()
+	var restored: RefCounted = TORCH_MODEL_SCRIPT.new()
+	_assert_true(restored.restore_snapshot(snapshot), "torch snapshot restores remaining time")
+	_assert_approx(restored.get_remaining_seconds(), torch.get_remaining_seconds(), "restored torch keeps burn time")
+
+
+func _run_processing_station_model_tests() -> void:
+	var catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+	var inventory: RefCounted = INVENTORY_MODEL_SCRIPT.new(4, catalog)
+	_assert_true(inventory.add_item(catalog.get_item(&"medium_container")), "processing inventory receives a water container")
+	_assert_true(inventory.fill_selected_container(WATER_CONTAINER_MODEL_SCRIPT.Source.PUDDLE, 1, false), "processing fills a dirty container")
+	_assert_true(inventory.add_item(catalog.get_item(&"raw_meat")), "processing inventory receives raw meat")
+	var station: RefCounted = PROCESSING_STATION_MODEL_SCRIPT.new()
+	_assert_true(station.start_purifying(inventory), "station starts a purification slot")
+	_assert_true(inventory.set_selected_slot(1), "processing selects the cooking slot")
+	_assert_true(station.start_cooking(inventory), "station starts a cooking slot concurrently")
+	_assert_true(not station.start_cooking(inventory), "cooking slot rejects duplicate jobs")
+	_assert_true(station.advance(3.0, false, false, true), "both processing slots advance while stable")
+	_assert_true(not station.is_cooking_complete(), "cooking remains active before completion")
+	_assert_true(station.advance(3.0, false, false, true), "purification reaches its shorter duration")
+	_assert_true(station.is_purifying_complete(), "purification completes independently")
+	_assert_true(not station.advance(1.0, true, false, true), "movement interrupts cooking")
+	_assert_true(station.is_cooking_interrupted(), "interrupted cooking exposes its state")
+	_assert_true(inventory.get_selected_item().id == &"raw_meat", "interrupted cooking refunds raw meat")
+	_assert_true(station.start_cooking(inventory), "cooking can restart after interruption")
+	_assert_true(station.advance(8.0, false, false, true), "cooking completes after its duration")
+	_assert_true(inventory.get_selected_item().id == &"cooked_meat", "cooking outputs cooked meat")
+	_assert_true(inventory.get_container_snapshot_at(0).get("purified", false), "purification modifies the locked container slot")
+	var processing_snapshot: Dictionary = station.create_snapshot()
+	var restored_station: RefCounted = PROCESSING_STATION_MODEL_SCRIPT.new()
+	_assert_true(restored_station.restore_snapshot(processing_snapshot, inventory), "processing station snapshot restores")
+
+
+func _run_building_model_tests() -> void:
+	var wall: RefCounted = BUILDING_MODEL_SCRIPT.new(BUILDING_MODEL_SCRIPT.Kind.WALL, Vector2(100.0, 100.0))
+	_assert_true(wall.is_position_valid(Rect2(0.0, 0.0, 500.0, 500.0), []), "wall placement accepts an in-bounds position")
+	_assert_true(not wall.is_position_valid(Rect2(0.0, 0.0, 500.0, 500.0), [Vector2(100.0, 100.0)]), "building placement rejects an occupied route origin")
+	var edge_wall: RefCounted = BUILDING_MODEL_SCRIPT.new(BUILDING_MODEL_SCRIPT.Kind.WALL, Vector2(10.0, 10.0))
+	_assert_true(not edge_wall.is_position_valid(Rect2(0.0, 0.0, 500.0, 500.0), []), "building placement rejects a footprint outside map bounds")
+	_assert_true(not wall.is_position_valid(Rect2(0.0, 0.0, 500.0, 500.0), [Vector2(100.0, 100.0)]), "building placement rejects occupied positions")
+	_assert_true(wall.take_damage(25.0), "building health decreases after damage")
+	_assert_equal(wall.get_health(), 75.0, "building health tracks damage")
+	var snapshot: Dictionary = wall.create_snapshot()
+	var restored: RefCounted = BUILDING_MODEL_SCRIPT.new(BUILDING_MODEL_SCRIPT.Kind.WALL, Vector2.ZERO)
+	_assert_true(restored.restore_snapshot(snapshot), "building snapshot restores position and health")
+	_assert_equal(restored.get_position(), Vector2(100.0, 100.0), "restored building keeps position")
+
+
+func _run_night_fog_and_moon_model_tests() -> void:
+	var fog: RefCounted = NIGHT_FOG_MODEL_SCRIPT.new()
+	_assert_equal(fog.get_phase(0.0, false), 0, "day remains in the fixed contamination phase")
+	_assert_equal(fog.get_phase(119.9, true), 1, "night starts with the first fog phase")
+	_assert_equal(fog.get_phase(120.0, true), 2, "fog expands to phase two after two minutes")
+	_assert_equal(fog.get_phase(240.0, true), 3, "fog reaches the final phase after four minutes")
+	_assert_true(fog.is_in_fog(95.0, 100.0, 240.0, true), "late-night fog covers the outer map")
+	_assert_true(not fog.is_in_fog(20.0, 100.0, 0.0, true), "early-night safe center remains outside fog")
+	var moons: RefCounted = MOON_CYCLE_MODEL_SCRIPT.new()
+	_assert_equal(moons.get_kind(0), 0, "first two nights are azure moon")
+	_assert_equal(moons.get_kind(2), 1, "nights three and four are cold moon")
+	_assert_equal(moons.get_kind(4), 2, "nights five and six are crimson moon")
+	_assert_true(moons.is_new_moon(6), "seventh night is new moon")
+	_assert_approx(moons.get_monster_spawn_multiplier(6), 2.0, "new moon doubles monster refresh")
+	_assert_approx(moons.get_special_spawn_ratio(4), 0.5, "crimson moon reserves half of spawns for specials")
+	_assert_approx(moons.get_special_spawn_ratio(6), 0.15, "new moon keeps a low special spawn chance")
+	_assert_approx(moons.get_enemy_speed_multiplier(2), 0.70, "cold moon slows enemy movement")
+	var mark: RefCounted = DARKNESS_MARK_MODEL_SCRIPT.new()
+	_assert_true(not mark.register_dark_attack(false, true, 6), "day attack cannot create a darkness mark")
+	_assert_true(mark.register_dark_attack(true, true, 6), "full-dark new moon attack creates a mark")
+	_assert_true(not mark.register_dark_attack(true, true, 6), "one night creates at most one darkness mark")
+	var mark_effect: Dictionary = mark.consume_for_new_moon()
+	_assert_approx(float(mark_effect["budget_multiplier"]), 1.5, "marked new moon increases the next budget")
+	_assert_true(bool(mark_effect["special_tier_two_warning"]), "marked new moon guarantees a tier-two warning")
+
+
+func _run_dynamic_spawn_director_model_tests() -> void:
+	var point_a: Resource = DYNAMIC_SPAWN_POINT_SCRIPT.new()
+	point_a.id = &"fog_a"
+	point_a.position = Vector2(200.0, 0.0)
+	point_a.weight = 1.0
+	var point_b: Resource = DYNAMIC_SPAWN_POINT_SCRIPT.new()
+	point_b.id = &"fog_b"
+	point_b.position = Vector2(20.0, 0.0)
+	point_b.weight = 8.0
+	_assert_true(point_a.is_valid() and point_b.is_valid(), "dynamic spawn points validate their static contract")
+	var director: RefCounted = DYNAMIC_SPAWN_DIRECTOR_SCRIPT.new(45.0)
+	_assert_true(director.set_wave_interval_seconds(30.0), "spawn director accepts a moon-adjusted wave interval")
+	_assert_approx(director.get_wave_interval_seconds(), 30.0, "spawn director exposes its effective wave interval")
+	_assert_true(director.set_wave_interval_seconds(45.0), "spawn director can restore its base wave interval")
+	_assert_true(director.advance(44.0, true), "spawn director advances during night")
+	_assert_true(not director.is_wave_ready(), "spawn wave waits for its interval")
+	_assert_true(director.advance(1.0, true), "spawn director reaches a wave boundary")
+	_assert_true(director.is_wave_ready(), "spawn director reports a ready wave")
+	var random_stream: RefCounted = RUN_RANDOM_STREAM_MODEL_SCRIPT.new()
+	_assert_true(random_stream.start(24680, 1), "spawn director receives a deterministic random stream")
+	var dynamic_points: Array[Resource] = [point_a, point_b]
+	var protected_points: Array[Vector2] = []
+	var selected: Resource = director.choose_spawn_point(dynamic_points, random_stream, Vector2.ZERO, protected_points, false, true)
+	_assert_equal(selected, point_a, "spawn director rejects a point too close to the player")
+	_assert_true(director.register_retry(), "spawn director records failed placement retries")
+	_assert_equal(director.get_retry_count(), 1, "spawn retry count is observable")
+	_assert_true(director.consume_wave(), "spawn director consumes a ready wave")
+	_assert_true(not director.is_wave_ready(), "consuming a wave resets its interval")
+	var snapshot: Dictionary = director.create_snapshot()
+	var restored: RefCounted = DYNAMIC_SPAWN_DIRECTOR_SCRIPT.new()
+	_assert_true(restored.restore_snapshot(snapshot), "spawn director snapshot restores timing state")
+	_assert_approx(restored.get_wave_interval_seconds(), 45.0, "restored director keeps the effective interval")
+	_assert_true(director.choose_spawn_point(dynamic_points, random_stream, Vector2.ZERO, protected_points, false, true, false, 0.5) != null, "special weighting keeps valid fog points selectable")
+
+
+func _run_plan038_model_tests() -> void:
+	var noise_event_model_script: Script = load("res://scripts/combat/noise_event_model.gd") as Script
+	var enemy_role_model_script: Script = load("res://scripts/combat/enemy_role_model.gd") as Script
+	var ranged_weapon_model_script: Script = load("res://scripts/combat/ranged_weapon_model.gd") as Script
+	var drop_budget_model_script: Script = load("res://scripts/items/drop_budget_model.gd") as Script
+	var enemy_tier_model_script: Script = load("res://scripts/combat/enemy_tier_model.gd") as Script
+	_assert_true(noise_event_model_script != null, "noise event model is available")
+	_assert_true(enemy_role_model_script != null, "enemy role model is available")
+	_assert_true(ranged_weapon_model_script != null, "ranged weapon model is available")
+	_assert_true(drop_budget_model_script != null, "drop budget model is available")
+	_assert_true(enemy_tier_model_script != null, "enemy tier model is available")
+	if noise_event_model_script == null or enemy_role_model_script == null or ranged_weapon_model_script == null \
+		or drop_budget_model_script == null or enemy_tier_model_script == null:
+		return
+	var noise: RefCounted = noise_event_model_script.new(noise_event_model_script.Kind.MELEE, Vector2.ZERO, 1.0, false)
+	_assert_equal(noise.get_radius_steps(), 4.0, "melee noise uses the unified four-step radius")
+	_assert_equal(noise.get_strength(), 1.0, "noise exposes its normalized strength")
+	_assert_true(noise.affects(Vector2(120.0, 0.0), false, false), "unblocked noise reaches a listener within radius")
+	_assert_true(not noise.affects(Vector2(200.0, 0.0), false, false), "noise does not reach listeners outside radius")
+	_assert_true(not noise.affects(Vector2(40.0, 0.0), true, false), "walls block a noise event")
+	var rain_noise: RefCounted = noise_event_model_script.new(noise_event_model_script.Kind.GATHER, Vector2.ZERO, 1.0, true)
+	_assert_true(rain_noise.affects(Vector2(200.0, 0.0), false, false), "rain noise keeps the reduced effective radius")
+	var roles: RefCounted = enemy_role_model_script.new()
+	_assert_approx(roles.get_sound_radius_steps(0, 6.0), 6.0, "hunter keeps the full sound clue radius")
+	_assert_approx(roles.get_sound_radius_steps(1, 6.0), 8.0, "investigator extends its sound clue radius")
+	_assert_approx(roles.get_sound_radius_steps(2, 6.0), 4.0, "siege enemy has a shorter sound clue radius")
+	_assert_true(roles.should_disengage(0, 40.0, 1.0), "hunter disengages after losing a distant clue")
+	_assert_true(not roles.should_disengage(2, 40.0, 1.0), "siege enemy holds its position instead of disengaging")
+	var weapon: RefCounted = ranged_weapon_model_script.new(6, 2.0, 0.5)
+	_assert_true(weapon.load_magazine(6), "ranged weapon loads a magazine")
+	_assert_true(weapon.try_fire(), "loaded ranged weapon can fire")
+	_assert_equal(weapon.get_magazine_rounds(), 5, "firing consumes one magazine round")
+	_assert_true(not weapon.try_fire(), "fire cooldown blocks an immediate second shot")
+	_assert_true(weapon.advance(0.5), "weapon cooldown advances")
+	_assert_true(weapon.start_reload(4), "reload starts with available reserve ammunition")
+	_assert_true(weapon.interrupt_reload(), "movement or damage interrupts reload")
+	_assert_equal(weapon.get_reserve_rounds(), 4, "interrupted reload does not consume reserve ammunition")
+	var drops: RefCounted = drop_budget_model_script.new(1, 2, 1)
+	_assert_true(not drops.should_force_food(), "food pity does not trigger before three misses")
+	drops.register_kill(false)
+	drops.register_kill(false)
+	drops.register_kill(false)
+	_assert_true(drops.should_force_food(), "the fourth eligible kill triggers food pity")
+	_assert_true(drops.register_kill(true), "food drop resets the pity counter")
+	_assert_true(not drops.should_force_food(), "food pity resets after a successful drop")
+	_assert_true(drops.try_spend_material_budget(2), "material budget allows its configured cap")
+	_assert_true(not drops.try_spend_material_budget(1), "material budget rejects overflow")
+	_assert_true(drops.register_kill(false, false), "ineligible enemy kills do not alter food pity")
+	_assert_equal(drops.get_material_remaining(), 0, "material remaining reaches zero at its budget cap")
+	_assert_equal(enemy_tier_model_script.get_threat_cost(0), 1, "ordinary enemy uses one threat cost")
+	_assert_equal(enemy_tier_model_script.get_threat_cost(3), 4, "tier-two enemy uses the highest threat cost")
+	_assert_true(enemy_tier_model_script.can_drop_crystal(2), "elite enemy can qualify for crystal drops")
+
+
+func _run_plan039_model_tests() -> void:
+	var equipment_transaction_script: Script = load("res://scripts/items/equipment_transaction_model.gd") as Script
+	_assert_true(equipment_transaction_script != null, "equipment transaction model is available")
+	var attributes: RefCounted = CHARACTER_ATTRIBUTES_MODEL_SCRIPT.new()
+	_assert_true(attributes.has_method("get_total_points"), "attributes expose the run allocation budget")
+	if attributes.has_method("get_total_points"):
+		var ranked_attributes: RefCounted = CHARACTER_ATTRIBUTES_MODEL_SCRIPT.new(35)
+		_assert_equal(ranked_attributes.get_total_points(), 35, "meta tier bonuses expand the run allocation budget")
+		_assert_true(ranked_attributes.allocate(CHARACTER_ATTRIBUTES_MODEL_SCRIPT.Attribute.INTELLIGENCE, 15), "expanded attribute budget can allocate beyond the base ten points")
+		_assert_equal(ranked_attributes.get_points_remaining(), 20, "expanded allocation conserves the complete point budget")
+	_assert_equal(attributes.get_points_remaining(), 10, "attributes start with ten allocation points")
+	_assert_true(attributes.allocate(CHARACTER_ATTRIBUTES_MODEL_SCRIPT.Attribute.INTELLIGENCE, 4), "intelligence accepts an allocation")
+	_assert_true(attributes.allocate(CHARACTER_ATTRIBUTES_MODEL_SCRIPT.Attribute.STRENGTH, 3), "strength accepts an allocation")
+	_assert_true(attributes.allocate(CHARACTER_ATTRIBUTES_MODEL_SCRIPT.Attribute.VITALITY, 3), "vitality accepts the remaining allocation")
+	_assert_equal(attributes.get_points_remaining(), 0, "attribute points are conserved")
+	_assert_true(not attributes.allocate(999), "invalid attributes are rejected")
+	_assert_true(not attributes.allocate(CHARACTER_ATTRIBUTES_MODEL_SCRIPT.Attribute.VITALITY), "allocation rejects exhausted points")
+	_assert_true(attributes.confirm(), "complete attribute allocation can be confirmed")
+	_assert_true(not attributes.allocate(CHARACTER_ATTRIBUTES_MODEL_SCRIPT.Attribute.VITALITY), "confirmed attributes are locked")
+	_assert_true(not attributes.confirm(), "confirmed attributes cannot be confirmed twice")
+	_assert_approx(attributes.get_crafting_speed_multiplier(), 0.88, "intelligence reduces crafting time")
+	_assert_approx(attributes.get_crafting_material_discount_limit(), 0.12, "intelligence exposes capped material discount")
+	_assert_approx(attributes.get_melee_damage_multiplier(), 1.12, "strength increases melee damage")
+	_assert_approx(attributes.get_carry_capacity_bonus(), 6.0, "strength increases carry capacity")
+	_assert_approx(attributes.get_max_health_bonus(), 12.0, "vitality increases maximum health")
+	_assert_approx(attributes.get_max_stamina_bonus(), 18.0, "vitality increases maximum stamina")
+	var attribute_snapshot: Dictionary = attributes.create_snapshot()
+	var restored_attributes: RefCounted = CHARACTER_ATTRIBUTES_MODEL_SCRIPT.new()
+	_assert_true(restored_attributes.restore_snapshot(attribute_snapshot), "attributes restore a valid snapshot")
+	_assert_equal(restored_attributes.get_value(CHARACTER_ATTRIBUTES_MODEL_SCRIPT.Attribute.STRENGTH), 3, "attribute snapshot preserves values")
+	_assert_true(not restored_attributes.restore_snapshot({"format_version": 1, "total_points": 10, "values": {"intelligence": 20, "strength": 20, "vitality": 20}, "points_remaining": 0, "confirmed": true}), "attribute snapshot rejects point conservation violations")
+
+	var head: ItemData = _make_equipment_item("test_head", "测试头盔", EQUIPMENT_DEFINITION_SCRIPT.Slot.HEAD, 0, 0.0, 0.95)
+	var backpack: ItemData = _make_equipment_item("test_backpack", "测试背包", EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK, 4, 6.0)
+	var heavy_backpack: ItemData = _make_equipment_item("test_heavy_backpack", "测试重型背包", EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK, 4, 10.0)
+	var catalog: RefCounted = ITEM_CATALOG_SCRIPT.new([head, backpack, heavy_backpack])
+	var equipment: RefCounted = EQUIPMENT_MODEL_SCRIPT.new(catalog)
+	_assert_true(equipment.equip(head), "head equipment fills the head slot")
+	_assert_true(equipment.equip(backpack, 8), "backpack equipment fills the backpack slot")
+	_assert_equal(equipment.get_inventory_slot_count(), 12, "backpack expands inventory to twelve slots")
+	_assert_true(not equipment.equip(heavy_backpack, 13), "backpack replacement rejects an over-capacity inventory")
+	_assert_true(equipment.equip(heavy_backpack, 12), "backpack replacement accepts inventory at the new capacity")
+	_assert_true(equipment.equip(head, 0), "same-slot equipment replacement remains valid")
+	var equipment_snapshot: Dictionary = equipment.create_snapshot()
+	var restored_equipment: RefCounted = EQUIPMENT_MODEL_SCRIPT.new(catalog)
+	_assert_true(restored_equipment.restore_snapshot(equipment_snapshot), "equipment restores a valid snapshot")
+	_assert_equal(restored_equipment.get_equipped(EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK).id, &"test_heavy_backpack", "equipment snapshot preserves the selected item")
+	_assert_true(restored_equipment.unequip(EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK, 12) == null, "backpack removal rejects an over-capacity inventory")
+	_assert_true(restored_equipment.unequip(EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK, 8) != null, "backpack can be unequipped after inventory is reduced")
+	_assert_true(restored_equipment.get_equipped(EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK) == null, "unequip clears the slot")
+
+	var encumbrance: RefCounted = ENCUMBRANCE_MODEL_SCRIPT.new(20.0)
+	_assert_true(encumbrance.set_bonus_capacity(4.0), "encumbrance accepts attribute and equipment capacity")
+	_assert_approx(encumbrance.get_max_capacity(), 24.0, "encumbrance exposes maximum capacity")
+	_assert_true(encumbrance.set_current_weight(24.0), "encumbrance accepts normal capacity weight")
+	_assert_approx(encumbrance.get_speed_multiplier(), 1.0, "at capacity movement is unpenalized")
+	_assert_true(encumbrance.set_current_weight(25.2), "encumbrance enters the first overload tier")
+	_assert_approx(encumbrance.get_speed_multiplier(), 0.9, "first overload tier reduces speed")
+	_assert_true(encumbrance.set_current_weight(30.0), "encumbrance crosses the twenty-five percent threshold")
+	_assert_approx(encumbrance.get_stamina_cost_multiplier(), 1.25, "second overload tier increases stamina cost")
+	_assert_true(encumbrance.can_run(), "running remains allowed at the second overload tier")
+	_assert_true(encumbrance.set_current_weight(34.0), "encumbrance crosses the forty percent threshold")
+	_assert_true(not encumbrance.can_run(), "third overload tier forbids running")
+	_assert_true(encumbrance.set_current_weight(40.0), "encumbrance crosses the extreme threshold")
+	_assert_true(not encumbrance.can_vault() and not encumbrance.can_swim(), "extreme overload forbids high intensity traversal")
+	var encumbrance_snapshot: Dictionary = encumbrance.create_snapshot()
+	var restored_encumbrance: RefCounted = ENCUMBRANCE_MODEL_SCRIPT.new()
+	_assert_true(restored_encumbrance.restore_snapshot(encumbrance_snapshot), "encumbrance restores a valid snapshot")
+	_assert_approx(restored_encumbrance.get_current_weight(), 40.0, "encumbrance snapshot preserves weight")
+
+	var buffs: RefCounted = RUN_BUILD_MODEL_SCRIPT.new()
+	_assert_true(buffs.apply_effect(UPGRADE_DEFINITION_SCRIPT.EffectType.DAMAGE_MULTIPLIER, 0.1, &"test_damage"), "build test applies a buff")
+	var build: RefCounted = CHARACTER_BUILD_MODEL_SCRIPT.new(attributes, equipment, buffs, encumbrance)
+	_assert_true(build.refresh_weight(24.0), "character build refreshes weight from composed bonuses")
+	_assert_approx(build.get_melee_damage(100.0), 123.2, "attributes, equipment and buff resolve in a predictable order")
+	_assert_approx(build.get_max_health(100.0), 112.0, "vitality contributes to resolved health")
+	_assert_approx(build.get_move_speed_multiplier(), 0.95, "weight and head equipment combine into movement")
+	var combat_focused_attributes: RefCounted = CHARACTER_ATTRIBUTES_MODEL_SCRIPT.new()
+	_assert_true(combat_focused_attributes.allocate(CHARACTER_ATTRIBUTES_MODEL_SCRIPT.Attribute.STRENGTH, 10), "combat-focused build allocates its full strength package")
+	var combat_focused_build: RefCounted = CHARACTER_BUILD_MODEL_SCRIPT.new(combat_focused_attributes, EQUIPMENT_MODEL_SCRIPT.new(catalog), null, ENCUMBRANCE_MODEL_SCRIPT.new())
+	_assert_true(combat_focused_build.refresh_weight(0.0), "combat-focused build resolves its weight")
+	_assert_true(combat_focused_build.get_melee_damage(100.0) > build.get_melee_damage(100.0), "different attribute builds produce different melee outcomes")
+	_assert_true(combat_focused_build.get_max_health(100.0) < build.get_max_health(100.0), "different attribute builds produce different survival outcomes")
+	var build_snapshot: Dictionary = build.create_snapshot()
+	var restored_build: RefCounted = CHARACTER_BUILD_MODEL_SCRIPT.new(null, null, buffs, null)
+	_assert_true(restored_build.restore_snapshot(build_snapshot, catalog), "character build restores attributes, equipment, and weight")
+	_assert_equal(restored_build.get_inventory_slot_count(), 12, "restored build keeps the equipped backpack capacity")
+	var interaction: RefCounted = EQUIPMENT_INTERACTION_MODEL_SCRIPT.new()
+	_assert_true(interaction.start(3, &"frame_pack"), "equipment interaction starts for a valid slot and item")
+	_assert_true(not interaction.advance(1.5, false, false), "equipment interaction keeps partial standing progress")
+	_assert_approx(interaction.get_remaining_seconds(), 0.5, "equipment interaction exposes remaining time")
+	_assert_true(not interaction.advance(0.1, true, false), "moving interrupts equipment interaction")
+	_assert_equal(interaction.get_state(), EQUIPMENT_INTERACTION_MODEL_SCRIPT.State.IDLE, "movement interruption returns equipment interaction to idle")
+	_assert_true(interaction.start(3, &"frame_pack"), "equipment interaction can restart after interruption")
+	_assert_true(not interaction.advance(0.5, false, true), "being hit interrupts equipment interaction")
+	_assert_true(interaction.start(3, &"frame_pack"), "equipment interaction can restart after damage")
+	_assert_true(interaction.advance(2.0, false, false), "standing for two seconds completes equipment interaction")
+	var completed_request: Dictionary = interaction.consume_completed()
+	_assert_equal(completed_request.get("operation"), EQUIPMENT_INTERACTION_MODEL_SCRIPT.Operation.EQUIP, "completed equipment interaction identifies an equip operation")
+	_assert_equal(completed_request.get("item_id"), "frame_pack", "completed interaction exposes its equipment request")
+	_assert_equal(interaction.get_state(), EQUIPMENT_INTERACTION_MODEL_SCRIPT.State.IDLE, "consuming a completed request returns to idle")
+	_assert_true(interaction.start_unequip(3, &"frame_pack"), "equipment interaction starts an unequip operation")
+	_assert_true(interaction.advance(2.0, false, false), "standing for two seconds completes unequip interaction")
+	var completed_unequip: Dictionary = interaction.consume_completed()
+	_assert_equal(completed_unequip.get("operation"), EQUIPMENT_INTERACTION_MODEL_SCRIPT.Operation.UNEQUIP, "completed unequip interaction preserves its operation")
+	if equipment_transaction_script != null:
+		var transaction: RefCounted = equipment_transaction_script.new()
+		var transaction_catalog: RefCounted = ITEM_CATALOG_SCRIPT.new()
+		var transaction_inventory: RefCounted = INVENTORY_MODEL_SCRIPT.new(8, transaction_catalog)
+		var transaction_build: RefCounted = CHARACTER_BUILD_MODEL_SCRIPT.new(null, EQUIPMENT_MODEL_SCRIPT.new(transaction_catalog), null, null)
+		var field_pack_item: ItemData = transaction_catalog.get_item(&"field_pack")
+		var frame_pack_item: ItemData = transaction_catalog.get_item(&"frame_pack")
+		_assert_true(transaction_inventory.add_item(field_pack_item), "equipment transaction starts with a backpack in inventory")
+		_assert_true(transaction.equip_selected(transaction_inventory, transaction_build, transaction_catalog), "equipment transaction equips the selected backpack")
+		_assert_equal(transaction_build.get_equipped_item_id(EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK), &"field_pack", "equipment transaction updates the backpack slot")
+		_assert_equal(transaction_inventory.get_slot_count(), 10, "equipping a field pack expands inventory to ten slots")
+		_assert_true(transaction_inventory.add_item(frame_pack_item), "equipment transaction accepts a replacement backpack")
+		_assert_true(not transaction_inventory.set_selected_slot(0), "equipment transaction replacement remains in the selected first slot")
+		_assert_true(transaction.equip_selected(transaction_inventory, transaction_build, transaction_catalog), "equipment transaction atomically replaces a backpack")
+		_assert_equal(transaction_build.get_equipped_item_id(EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK), &"frame_pack", "replacement equips the new backpack")
+		_assert_equal(transaction_inventory.get_slot_count(), 12, "replacement backpack expands inventory to twelve slots")
+		_assert_true(transaction_inventory.get_items().any(func(item: ItemData) -> bool: return item != null and item.id == &"field_pack"), "replacement returns the previous backpack to inventory")
+		var rollback_inventory: RefCounted = INVENTORY_MODEL_SCRIPT.new(12, transaction_catalog)
+		var rollback_build: RefCounted = CHARACTER_BUILD_MODEL_SCRIPT.new(null, EQUIPMENT_MODEL_SCRIPT.new(transaction_catalog), null, null)
+		_assert_true(rollback_build.equip_item(frame_pack_item), "rollback test equips the large backpack")
+		for _index: int in 11:
+			_assert_true(rollback_inventory.add_item(transaction_catalog.get_item(&"stone_sword")), "rollback test fills inventory slots")
+		_assert_true(rollback_inventory.add_item(field_pack_item), "rollback test places the smaller backpack in the final slot")
+		_assert_true(rollback_inventory.set_selected_slot(11), "rollback test selects the smaller backpack")
+		_assert_true(not transaction.equip_selected(rollback_inventory, rollback_build, transaction_catalog), "equipment transaction rejects unsafe backpack shrink")
+		_assert_equal(rollback_build.get_equipped_item_id(EQUIPMENT_DEFINITION_SCRIPT.Slot.BACKPACK), &"frame_pack", "failed backpack replacement restores the previous equipment")
+		_assert_equal(rollback_inventory.get_slot_count(), 12, "failed backpack replacement restores inventory capacity")
+
+
+func _make_equipment_item(item_id: String, display_name: String, slot: int, slot_bonus: int, carry_bonus: float, speed_multiplier: float = 1.0) -> ItemData:
+	var item: ItemData = ITEM_DATA_SCRIPT.new() as ItemData
+	item.id = StringName(item_id)
+	item.display_name = display_name
+	item.item_type = ITEM_DATA_SCRIPT.ItemType.EQUIPMENT
+	item.max_stack = 1
+	var definition: Resource = EQUIPMENT_DEFINITION_SCRIPT.new()
+	definition.id = StringName(item_id)
+	definition.slot = slot
+	definition.inventory_slot_bonus = slot_bonus
+	definition.carry_capacity_bonus = carry_bonus
+	definition.move_speed_multiplier = speed_multiplier
+	item.equipment_definition = definition
+	return item
 
 
 func _run_melee_attack_model_tests() -> void:
@@ -216,6 +888,24 @@ func _run_melee_attack_model_tests() -> void:
 	sword.attack_damage = 20.0
 	_assert_true(model.can_attack(sword), "melee accepts positive damage sword")
 	_assert_equal(model.get_damage(sword), 20.0, "melee returns sword damage")
+	var firearm: ItemData = ITEM_DATA_SCRIPT.new() as ItemData
+	firearm.id = &"test_firearm"
+	firearm.display_name = "测试枪械"
+	firearm.item_type = ITEM_DATA_SCRIPT.ItemType.FIREARM
+	firearm.max_stack = 1
+	firearm.ranged_damage = 24.0
+	firearm.magazine_capacity = 6
+	firearm.ammo_item_id = &"pistol_ammo"
+	_assert_true(firearm.is_valid(), "firearm item validates its ranged configuration")
+	var invalid_firearm: ItemData = ITEM_DATA_SCRIPT.new() as ItemData
+	invalid_firearm.id = &"invalid_firearm"
+	invalid_firearm.display_name = "无弹匣枪械"
+	invalid_firearm.item_type = ITEM_DATA_SCRIPT.ItemType.FIREARM
+	_assert_true(not invalid_firearm.is_valid(), "firearm without ranged configuration is rejected")
+	var stamina: RefCounted = STAMINA_MODEL_SCRIPT.new(100.0, 30.0, 15.0)
+	_assert_true(stamina.try_spend(6.0), "melee stamina cost can be paid")
+	_assert_approx(stamina.get_stamina(), 94.0, "melee stamina cost removes six percent from a full bar")
+	_assert_true(not stamina.try_spend(95.0), "melee attack is rejected when stamina is insufficient")
 
 
 func _run_revive_model_tests() -> void:
@@ -443,6 +1133,11 @@ func _run_run_save_model_tests() -> void:
 	if loaded != null:
 		_assert_equal(loaded.run_session_state["floor_number"], 3, "loaded snapshot preserves session state")
 		_assert_equal(loaded.random_stream_state["run_seed"], 777, "loaded snapshot preserves random state")
+		var legacy_data: Dictionary = snapshot.to_dictionary()
+		legacy_data["schema_version"] = 1
+		var legacy_loaded: RefCounted = RUN_SNAPSHOT_DATA_SCRIPT.new()
+		_assert_true(legacy_loaded.from_dictionary(legacy_data), "version-one run snapshot remains readable")
+		_assert_equal(legacy_loaded.schema_version, 2, "version-one snapshot normalizes to the current schema")
 
 	_assert_true(save_model.corrupt_safe_exit_for_test(), "test helper can simulate a corrupt main snapshot")
 	var fallback = save_model.load_latest()
@@ -741,6 +1436,16 @@ func _run_survival_vitals_model_tests() -> void:
 	_assert_approx(crossing_zero.tick(3.6), 0.0, "time before hunger reaches zero does not count as warning time")
 	_assert_approx(crossing_zero.tick(5.0), 0.0, "warning begins when hunger actually reaches zero")
 	_assert_approx(crossing_zero.tick(1.0), 0.01, "damage begins after five real seconds at zero")
+	var threshold_model: RefCounted = SURVIVAL_VITALS_MODEL_SCRIPT.new(19.0, 19.0)
+	_assert_approx(threshold_model.get_stamina_recovery_multiplier(), 0.80, "low hunger reduces stamina recovery")
+	_assert_approx(threshold_model.get_healing_multiplier(), 0.70, "low hunger reduces healing")
+	_assert_approx(threshold_model.get_stamina_cost_multiplier(), 1.20, "low water increases stamina cost")
+	_assert_approx(threshold_model.get_move_speed_multiplier(), 0.95, "low water reduces movement speed")
+	threshold_model = SURVIVAL_VITALS_MODEL_SCRIPT.new(4.0, 4.0)
+	_assert_approx(threshold_model.get_stamina_recovery_multiplier(), 0.50, "critical hunger heavily reduces stamina recovery")
+	_assert_approx(threshold_model.get_healing_multiplier(), 0.0, "critical hunger blocks healing")
+	_assert_approx(threshold_model.get_stamina_cost_multiplier(), 1.50, "critical water sharply increases stamina cost")
+	_assert_approx(threshold_model.get_move_speed_multiplier(), 0.85, "critical water sharply reduces movement speed")
 
 
 func _run_survival_clock_model_tests() -> void:
@@ -1012,6 +1717,19 @@ func _run_disaster_event_model_tests() -> void:
 
 func _run_meta_progression_model_tests() -> void:
 	var model = META_PROGRESSION_MODEL_SCRIPT.new()
+	_assert_true(model.has_method("get_crystal_tier"), "meta progression exposes cumulative crystal tier")
+	_assert_true(model.has_method("get_attribute_point_bonus"), "meta progression exposes tier attribute point rewards")
+	if model.has_method("get_crystal_tier") and model.has_method("get_attribute_point_bonus"):
+		var ranked_meta: RefCounted = META_PROGRESSION_MODEL_SCRIPT.new()
+		_assert_true(ranked_meta.add_crystals(160), "ranked meta accepts cumulative crystals")
+		_assert_equal(ranked_meta.get_crystal_tier(), 5, "one hundred sixty cumulative crystals reaches tier five")
+		_assert_equal(ranked_meta.get_attribute_point_bonus(), 25, "tier five grants twenty-five additional run allocation points")
+		_assert_true(ranked_meta.purchase_initial_buff(&"damage", 100), "ranked meta can spend wallet crystals")
+		_assert_equal(ranked_meta.get_crystal_tier(), 5, "spending wallet crystals does not lower cumulative tier")
+		var ranked_snapshot: Dictionary = ranked_meta.create_snapshot()
+		var restored_ranked_meta: RefCounted = META_PROGRESSION_MODEL_SCRIPT.new()
+		_assert_true(restored_ranked_meta.restore_snapshot(ranked_snapshot), "ranked meta snapshot restores cumulative crystals")
+		_assert_equal(restored_ranked_meta.get_attribute_point_bonus(), 25, "ranked meta snapshot preserves tier rewards")
 	_assert_equal(model.get_crystals(), 0, "meta progression starts with zero crystals")
 	_assert_true(model.add_crystals(20), "meta progression accepts positive crystals")
 	_assert_true(not model.add_crystals(0), "meta progression rejects zero crystals")
@@ -1085,3 +1803,116 @@ func _run_run_buff_draft_model_tests() -> void:
 		not guarded_draft.restore_snapshot({"luck": 0.0, "reroll_charges": 0, "stacks": {"": 1}}),
 		"draft snapshot rejects empty stack ids"
 	)
+
+
+func _run_plan040_model_tests() -> void:
+	_assert_equal(STEP_TERRAIN_MODEL_SCRIPT.pixels_to_steps(40.0), 1, "forty pixels equal one step")
+	_assert_equal(STEP_TERRAIN_MODEL_SCRIPT.pixels_to_steps(-120.0), 3, "step conversion uses absolute distance")
+	_assert_approx(STEP_TERRAIN_MODEL_SCRIPT.steps_to_pixels(3), 120.0, "three steps convert to one hundred twenty pixels")
+	_assert_true(STEP_TERRAIN_MODEL_SCRIPT.can_vault(2, false, 1.2), "regular vault accepts two steps")
+	_assert_true(not STEP_TERRAIN_MODEL_SCRIPT.can_vault(3, false, 1.2), "high vault is required for three steps")
+	_assert_true(STEP_TERRAIN_MODEL_SCRIPT.can_vault(3, true, 1.2), "high vault accepts three steps")
+	_assert_true(not STEP_TERRAIN_MODEL_SCRIPT.can_vault(4, true, 1.2), "four steps cannot be vaulted")
+
+	var vault = VAULT_ACTION_MODEL_SCRIPT.new(2.0, 1.0)
+	_assert_true(vault.try_start(2, false, 2.0), "vault starts when height and stamina are valid")
+	_assert_equal(vault.get_state(), 1, "vault enters active state")
+	_assert_true(not vault.try_start(2, false, 1.0), "active vault rejects duplicate start")
+	vault.advance(2.0)
+	_assert_equal(vault.get_state(), 0, "vault completes after its duration")
+	_assert_true(vault.try_start(3, true, 2.0), "high vault starts with the ability")
+	vault.cancel()
+	_assert_equal(vault.get_state(), 0, "vault cancellation returns to idle")
+	_assert_true(not vault.try_start(2, false, 0.5), "vault rejects insufficient stamina")
+
+	var digging = DIGGING_MODEL_SCRIPT.new(2.0, 3.0)
+	_assert_true(digging.try_start(1, 1, 2), "dirt can be dug within depth and durability")
+	_assert_equal(digging.get_state(), 1, "digging enters active state")
+	_assert_true(digging.advance(2.0), "digging completes after configured time")
+	_assert_equal(digging.get_terrain_depth(), 0, "completed digging lowers terrain depth")
+	_assert_equal(digging.get_shovel_durability(), 1, "digging consumes one shovel durability")
+	_assert_true(not digging.try_start(5, 1, 1), "stone is not diggable")
+	_assert_true(not digging.try_start(1, 4, 1), "digging rejects more than three downward steps")
+	_assert_true(digging.try_start(1, 1, 1), "digging can be restarted on a remaining layer")
+	_assert_true(digging.cancel(), "digging cancellation is explicit")
+
+	var water = WATER_TRAVERSAL_MODEL_SCRIPT.new(10.0, 2.0)
+	_assert_approx(water.get_speed_multiplier(0), 1.0, "shallow water keeps normal speed")
+	_assert_approx(water.get_speed_multiplier(2), 0.55, "deep water slows movement")
+	_assert_true(water.can_enter(2, 1.3), "swimming is allowed below the encumbrance limit")
+	_assert_true(not water.can_enter(2, 1.5), "overloaded player cannot start swimming")
+	water.start(2)
+	water.tick(1.0, true)
+	_assert_equal(water.get_state(), 1, "water traversal enters swimming state")
+	water.tick(5.0, true)
+	_assert_true(water.is_drowning(), "zero stamina in deep water starts drowning buffer")
+	_assert_true(water.get_drowning_buffer() < 3.0, "drowning buffer decreases while exhausted")
+	var water_snapshot: Dictionary = water.create_snapshot()
+	var restored_water = WATER_TRAVERSAL_MODEL_SCRIPT.new()
+	_assert_true(restored_water.restore_snapshot(water_snapshot), "water traversal restores a valid snapshot")
+	_assert_equal(restored_water.get_depth_steps(), 2, "water snapshot preserves depth")
+	_assert_true(not restored_water.restore_snapshot({"format_version": 1, "state": 99}), "water snapshot rejects invalid state")
+
+	var routes = ROUTE_VALIDATION_MODEL_SCRIPT.new()
+	_assert_true(routes.validate(&"start", &"exit", [routes.edge(&"start", &"exit", 0)]).is_empty(), "base route reaches exit")
+	_assert_true(not routes.validate(&"start", &"exit", [routes.edge(&"start", &"cliff", 4), routes.edge(&"cliff", &"exit", 0)]).is_empty(), "tool-only route is rejected")
+	_assert_true(not routes.validate(&"start", &"exit", [routes.edge(&"start", &"dead", 0)]).is_empty(), "missing exit route is rejected")
+
+
+func _run_plan041_model_tests() -> void:
+	var resolver = ENVIRONMENT_EFFECT_RESOLVER_SCRIPT.new()
+	var rain: Dictionary = resolver.resolve(&"rain", [], 2, false)
+	_assert_equal(int(rain.get("water_level_delta", 0)), 1, "rain raises the local water level by one step")
+	_assert_approx(float(rain.get("campfire_burn_multiplier", 0.0)), 1.5, "rain accelerates exposed campfire burn")
+	var combined: Dictionary = resolver.resolve(&"heatwave", [0, 4], 3, false)
+	_assert_true(float(combined.get("stamina_drain_multiplier", 0.0)) <= 2.0, "combined effects use a finite stamina cap")
+	_assert_true(float(combined.get("monster_spawn_multiplier", 0.0)) >= 1.0, "monster surge increases spawn pressure")
+	_assert_true(float(combined.get("water_level_delta", 0.0)) <= 0.0, "heatwave lowers water level")
+	var sheltered: Dictionary = resolver.resolve(&"rain", [0], 1, true)
+	_assert_approx(float(sheltered.get("campfire_burn_multiplier", 0.0)), 1.0, "shelter removes exposed rain burn penalty")
+	_assert_true(float(sheltered.get("hazard_damage_per_second", 0.0)) >= 0.0, "environment damage is explicit and bounded")
+
+	var countermeasures = DISASTER_COUNTERMEASURE_MODEL_SCRIPT.new()
+	_assert_true(countermeasures.get_options(0).size() >= 2, "ordinary disaster exposes at least two countermeasure options")
+	_assert_true(countermeasures.can_resolve(0, &"shelter"), "ordinary disaster accepts a shelter response")
+	_assert_true(countermeasures.can_resolve(0, &"evacuate"), "ordinary disaster accepts an evacuation response")
+	_assert_true(countermeasures.get_options(6).size() == 1, "hard disaster exposes one primary countermeasure")
+	_assert_true(countermeasures.can_resolve(6, countermeasures.get_options(6)[0]), "hard disaster accepts its primary facility")
+	_assert_true(not countermeasures.can_resolve(6, &"shelter"), "hard disaster shelter only delays the threat")
+
+
+func _run_plan042_model_tests() -> void:
+	var profile = REGION_PROFILE_MODEL_SCRIPT.new()
+	_assert_true(profile.get_profile(&"flooded_settlement").has("water_depth_bias"), "flooded settlement profile exposes water pressure")
+	_assert_true(profile.get_profile(&"abandoned_industry").has("digging_bias"), "industrial profile exposes digging pressure")
+	_assert_true(profile.get_profile(&"polluted_forest").has("fog_bias"), "polluted forest profile exposes fog pressure")
+	var route_model = REGION_ROUTE_MODEL_SCRIPT.new()
+	var generated: Dictionary = route_model.generate(3, 12345)
+	_assert_equal(generated.get("region_id"), &"flooded_settlement", "floor three route generation selects the flooded settlement")
+	_assert_true((generated.get("routes", []) as Array).size() >= 2, "generated region exposes base and ability routes")
+	_assert_true(route_model.validate_generated(generated).is_empty(), "generated route profile passes deterministic validation")
+	var repeat: Dictionary = route_model.generate(3, 12345)
+	_assert_equal(generated, repeat, "same floor seed generates the same route profile")
+
+
+func _run_plan043_model_tests() -> void:
+	var readiness = RELEASE_READINESS_MODEL_SCRIPT.new()
+	_assert_true(readiness.validate_difficulty_profiles().is_empty(), "difficulty profiles stay within release bounds")
+	_assert_true(readiness.validate_snapshot_size({"small": "state"}).is_empty(), "small snapshots pass the release size check")
+	_assert_true(not readiness.validate_snapshot_size({"state": "x".repeat(2000000)}).is_empty(), "oversized snapshots are rejected")
+	_assert_true(readiness.run_long_tick_simulation(6, 120.0), "long-run simulation completes all six floor ticks")
+	var accessibility = ACCESSIBILITY_SETTINGS_MODEL_SCRIPT.new()
+	_assert_true(accessibility.set_text_scale(1.25), "accessibility text scale accepts a readable value")
+	_assert_true(accessibility.set_color_redundancy(true), "accessibility keeps redundant non-color cues enabled")
+	_assert_true(accessibility.set_flash_intensity(0.0), "accessibility can disable flashing")
+	_assert_true(not accessibility.set_text_scale(0.2), "accessibility rejects unreadable text scale")
+	var accessibility_snapshot: Dictionary = accessibility.create_snapshot()
+	var restored_accessibility = ACCESSIBILITY_SETTINGS_MODEL_SCRIPT.new()
+	_assert_true(restored_accessibility.restore_snapshot(accessibility_snapshot), "accessibility settings restore")
+	var telemetry = LOCAL_TELEMETRY_MODEL_SCRIPT.new()
+	_assert_true(telemetry.record_death(&"dehydration"), "local telemetry records a death reason")
+	_assert_true(telemetry.record_floor_departure(184.0, 3), "local telemetry records a floor departure")
+	var telemetry_snapshot: Dictionary = telemetry.create_snapshot()
+	_assert_true(telemetry_snapshot.has("death_reasons"), "local telemetry snapshot exposes aggregate counters")
+	_assert_true(telemetry.clear(), "local telemetry can be cleared")
+	_assert_equal(telemetry.create_snapshot().get("death_reasons", {}).size(), 0, "clearing telemetry removes local counters")

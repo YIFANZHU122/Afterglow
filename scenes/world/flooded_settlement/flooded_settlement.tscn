@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/cihang_outskirts/cihang_outskirts.tscn" id="1_base"]
+[ext_resource type="Script" path="res://scenes/world/region_profile_presenter.gd" id="2_profile"]
+
+[node name="FloodedSettlement" instance=ExtResource("1_base")]
+
+[node name="RegionProfile" type="Node" parent="."]
+script = ExtResource("2_profile")
+region_id = &"flooded_settlement"

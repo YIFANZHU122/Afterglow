@@ -214,6 +214,7 @@ func _apply_moon_state() -> void:
 	_moon.texture = MOON_TEXTURES[_moon_phase_index]
 	_moon.visible = _is_night
 	_day_night_tint.color = NIGHT_TINT if _is_night else DAY_TINT
+	_apply_night_fog_visual()
 	_apply_anomaly_state()
 
 
@@ -224,8 +225,10 @@ func _apply_weather_state() -> void:
 		return
 	var base_color: Color = WEATHER_COLORS.get(_weather_mode, WEATHER_COLORS[&"clear"])
 	_weather_tint.color = Color(base_color.r, base_color.g, base_color.b, base_color.a * _weather_strength)
-	_fog_layer.visible = _weather_mode == &"dense_fog" and _weather_strength > 0.0
-	_fog_layer.modulate.a = 0.35 * _weather_strength
+	_apply_night_fog_visual()
+	if _weather_mode == &"dense_fog" and _weather_strength > 0.0:
+		_fog_layer.visible = true
+		_fog_layer.modulate.a = maxf(_fog_layer.modulate.a, 0.35 * _weather_strength)
 	_rain_layer.visible = _weather_mode == &"rainstorm" and _weather_strength > 0.0
 	_rain_layer.modulate.a = 0.55 * _weather_strength
 	_rain_layer.emitting = _rain_layer.visible
@@ -316,3 +319,15 @@ func _fill_weather_audio() -> void:
 		var sample: float = sin(_audio_phase * TAU * frequency) * 0.025 * _weather_strength
 		playback.push_frame(Vector2(sample, sample))
 	_particle_layer.emitting = _particle_layer.visible
+
+
+func _apply_night_fog_visual() -> void:
+	if not is_instance_valid(_fog_layer):
+		return
+	var phase: int = 0
+	if is_instance_valid(GameManager) and GameManager.has_method("get_night_fog_phase"):
+		phase = int(GameManager.get_night_fog_phase())
+	var alpha_by_phase: Array[float] = [0.0, 0.10, 0.20, 0.30]
+	var night_alpha: float = alpha_by_phase[clampi(phase, 0, alpha_by_phase.size() - 1)] if _is_night else 0.0
+	_fog_layer.visible = night_alpha > 0.0
+	_fog_layer.modulate.a = night_alpha

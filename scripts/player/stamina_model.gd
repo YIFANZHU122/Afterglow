@@ -26,22 +26,34 @@ func _init(max_stamina: float = 100.0, stamina_drain_rate: float = 30.0, stamina
 
 
 func tick(delta: float, direction: Vector2, sprint_requested: bool) -> void:
+	tick_with_modifiers(delta, direction, sprint_requested, 1.0, 1.0)
+
+
+func tick_with_modifiers(
+	delta: float,
+	direction: Vector2,
+	sprint_requested: bool,
+	regen_multiplier: float,
+	drain_multiplier: float
+) -> void:
 	if delta <= 0.0:
 		return
 	var is_moving: bool = direction != Vector2.ZERO
+	var safe_regen_multiplier: float = maxf(regen_multiplier, 0.0)
+	var safe_drain_multiplier: float = maxf(drain_multiplier, 0.0)
 	match _move_state:
 		MoveState.WALKING:
-			_stamina = minf(_stamina + _stamina_regen_rate * delta, _max_stamina)
+			_stamina = minf(_stamina + _stamina_regen_rate * safe_regen_multiplier * delta, _max_stamina)
 			if sprint_requested and is_moving and _stamina >= _max_stamina * RUN_STAMINA_RATIO:
 				_move_state = MoveState.RUNNING
 		MoveState.RUNNING:
-			_stamina = maxf(_stamina - _stamina_drain_rate * delta, 0.0)
+			_stamina = maxf(_stamina - _stamina_drain_rate * safe_drain_multiplier * delta, 0.0)
 			if _stamina <= 0.0:
 				_move_state = MoveState.EXHAUSTED
 			elif not sprint_requested or not is_moving:
 				_move_state = MoveState.WALKING
 		MoveState.EXHAUSTED:
-			_stamina = minf(_stamina + _stamina_regen_rate * delta, _max_stamina)
+			_stamina = minf(_stamina + _stamina_regen_rate * safe_regen_multiplier * delta, _max_stamina)
 			if _stamina >= _max_stamina * RUN_STAMINA_RATIO:
 				_move_state = MoveState.WALKING
 
@@ -56,6 +68,13 @@ func get_max_stamina() -> float:
 
 func get_state() -> MoveState:
 	return _move_state
+
+
+func try_spend(amount: float) -> bool:
+	if not is_finite(amount) or amount <= 0.0 or _stamina < amount:
+		return false
+	_stamina -= amount
+	return true
 
 
 func get_speed_multiplier(run_speed_multiplier: float, exhausted_speed_multiplier: float) -> float:

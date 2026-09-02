@@ -1,5 +1,7 @@
 extends Area2D
 
+const WORLD_SCENE_CATALOG_SCRIPT: Script = preload("res://scripts/world/world_scene_catalog.gd")
+
 ## 传送区域
 ## 玩家进入后切换到 target_scene，并在目标场景的 spawn_point_name 出生点出现
 
@@ -83,4 +85,12 @@ func _try_transition(body: Node) -> void:
 				return
 			if GameManager.get_floor_number() == GameManager.get_total_floors() and not final_floor_scene.is_empty():
 				destination_scene = final_floor_scene
+			else:
+				destination_scene = resolve_next_floor_scene(destination_scene)
 		GameManager.change_scene(destination_scene, spawn_point_name)
+
+
+func resolve_next_floor_scene(fallback_scene: String) -> String:
+	var catalog: RefCounted = WORLD_SCENE_CATALOG_SCRIPT.new()
+	var catalog_scene: String = catalog.get_scene_path(GameManager.get_floor_number())
+	return catalog_scene if not catalog_scene.is_empty() else fallback_scene

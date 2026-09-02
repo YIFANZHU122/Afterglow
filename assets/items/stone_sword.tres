@@ -9,4 +9,7 @@ id = &"stone_sword"
 display_name = "石头剑"
 icon = ExtResource("2_ss_texture")
 item_type = 1
+max_stack = 1
+unit_weight = 2.0
+tags = PackedStringArray("weapon", "melee")
 attack_damage = 20.0

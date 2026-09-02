@@ -12,3 +12,7 @@ script = ExtResource("1_iw_script")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_iw")
+
+[node name="Quantity" type="Label" parent="."]
+position = Vector2(12, 12)
+mouse_filter = 2

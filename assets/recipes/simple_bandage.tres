@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_definition.gd" id="1_recipe"]
+[ext_resource type="Script" path="res://scripts/data/recipe_ingredient.gd" id="2_ingredient"]
+[ext_resource type="Resource" path="res://assets/items/simple_bandage.tres" id="3_output"]
+[ext_resource type="Resource" path="res://assets/items/wild_food.tres" id="4_fiber"]
+
+[sub_resource type="Resource" id="RecipeIngredient_fiber"]
+script = ExtResource("2_ingredient")
+item = ExtResource("4_fiber")
+quantity = 1
+
+[resource]
+script = ExtResource("1_recipe")
+id = &"simple_bandage"
+display_name = "制作简易绷带"
+description = "用纤维制作基础止血用品。"
+output_item = ExtResource("3_output")
+ingredients = Array[Resource]([SubResource("RecipeIngredient_fiber")])
+craft_time_seconds = 3.0

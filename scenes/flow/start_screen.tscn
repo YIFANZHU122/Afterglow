@@ -130,6 +130,13 @@ popup/item_1/id = 1
 popup/item_2/text = "地狱"
 popup/item_2/id = 2
 
+[node name="GuideLabel" type="Label" parent="Menu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.68, 0.66, 1)
+theme_override_font_sizes/font_size = 13
+text = "WASD 移动  Shift 奔跑  E 交互  空格翻越  Z 挖掘  F 使用物品"
+autowrap_mode = 2
+
 [node name="Divider" type="HSeparator" parent="Menu"]
 layout_mode = 2
 
@@ -158,6 +165,14 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_button")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
 text = "局外成长"
+
+[node name="CharacterButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "角色配置"
 
 [node name="QuitButton" type="Button" parent="Menu"]
 custom_minimum_size = Vector2(0, 46)
@@ -288,6 +303,101 @@ offset_left = 32.0
 offset_top = 602.0
 offset_right = 548.0
 offset_bottom = 648.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "返回主菜单"
+
+[node name="CharacterPanel" type="Panel" parent="."]
+layout_mode = 0
+offset_left = 350.0
+offset_top = 116.0
+offset_right = 930.0
+offset_bottom = 650.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Title" type="Label" parent="CharacterPanel"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 552.0
+offset_bottom = 58.0
+theme_override_colors/font_color = Color(0.8, 0.95, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+text = "角色配置"
+horizontal_alignment = 1
+
+[node name="AttributeLabel" type="Label" parent="CharacterPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 82.0
+offset_right = 548.0
+offset_bottom = 140.0
+theme_override_colors/font_color = Color(0.72, 0.86, 0.8, 1)
+theme_override_font_sizes/font_size = 17
+text = "剩余点数  10\n智力  0   力量  0   体力  0"
+horizontal_alignment = 1
+
+[node name="IntelligenceButton" type="Button" parent="CharacterPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 164.0
+offset_right = 548.0
+offset_bottom = 214.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "智力  +1   制作效率 / 配方折扣"
+
+[node name="StrengthButton" type="Button" parent="CharacterPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 226.0
+offset_right = 548.0
+offset_bottom = 276.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "力量  +1   近战 / 负重 / 采集"
+
+[node name="VitalityButton" type="Button" parent="CharacterPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 288.0
+offset_right = 548.0
+offset_bottom = 338.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "体力  +1   生命 / 体力 / 恢复"
+
+[node name="ConfirmButton" type="Button" parent="CharacterPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 360.0
+offset_right = 548.0
+offset_bottom = 410.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+text = "确认本局属性"
+
+[node name="Status" type="Label" parent="CharacterPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 430.0
+offset_right = 548.0
+offset_bottom = 466.0
+theme_override_colors/font_color = Color(1, 0.7, 0.5, 1)
+text = ""
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="CharacterPanel"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 476.0
+offset_right = 548.0
+offset_bottom = 526.0
 theme_override_styles/normal = SubResource("StyleBoxFlat_button")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")

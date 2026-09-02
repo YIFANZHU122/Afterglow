@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scenes/characters/player/player.gd" id="1_player_script"]
 [ext_resource type="Texture2D" path="res://assets/sprites/character_walk.png" id="2_walk_texture"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_bar/inventory_bar.tscn" id="3_inventory_bar_scene"]
+[ext_resource type="PackedScene" path="res://scenes/ui/equipment_bar/equipment_bar.tscn" id="6_equipment_bar_scene"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="4_hc_script"]
 [ext_resource type="PackedScene" path="res://scenes/objects/attack_area/attack_area.tscn" id="5_attack_area_scene"]
 [ext_resource type="Resource" path="res://assets/items/stone_sword.tres" id="6_default_weapon"]
@@ -389,6 +390,32 @@ horizontal_alignment = 2
 autowrap_mode = 2
 fit_content = true
 
+[node name="BuildStatus" type="Label" parent="HUD/StatusStack"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.78, 0.86, 0.8, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 12
+text = "负重 0.0/20.0（0%）  可奔跑"
+horizontal_alignment = 2
+autowrap_mode = 2
+fit_content = true
+
+[node name="EquipmentStatus" type="Label" parent="HUD/StatusStack"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.68, 0.78, 0.74, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 11
+text = "装备  头:空  甲:空\n裤:空  包:无背包"
+horizontal_alignment = 2
+autowrap_mode = 2
+fit_content = true
+
 [node name="HealthBar" type="ProgressBar" parent="HUD"]
 anchor_left = 0.5
 anchor_top = 1.0
@@ -420,6 +447,8 @@ value = 100.0
 show_percentage = false
 
 [node name="InventoryBar" parent="HUD" instance=ExtResource("3_inventory_bar_scene")]
+
+[node name="EquipmentBar" parent="HUD" instance=ExtResource("6_equipment_bar_scene")]
 
 [node name="ReviveButton" type="Button" parent="HUD"]
 anchor_left = 0.5

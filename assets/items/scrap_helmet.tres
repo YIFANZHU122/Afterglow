@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_item"]
+[ext_resource type="Script" path="res://scripts/data/equipment_definition.gd" id="2_equipment"]
+
+[sub_resource type="Resource" id="EquipmentDefinition_scrap_helmet"]
+script = ExtResource("2_equipment")
+id = &"scrap_helmet"
+slot = 0
+move_speed_multiplier = 0.92
+disease_resistance = 0.15
+
+[resource]
+script = ExtResource("1_item")
+id = &"scrap_helmet"
+display_name = "拼装头盔"
+item_type = 8
+max_stack = 1
+unit_weight = 1.8
+tags = PackedStringArray("equipment", "head", "heavy")
+equipment_definition = SubResource("EquipmentDefinition_scrap_helmet")

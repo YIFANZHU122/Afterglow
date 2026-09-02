@@ -29,6 +29,7 @@ func _ready() -> void:
 	_assert_equal(presenter.call("get_moon_phase_index"), 0, "non-positive day indexes fall back to new moon")
 	_assert_true(bool(presenter.get_node("EnvironmentCanvas/MoonSprite").visible), "night shows the moon")
 	_assert_true(float(presenter.get_node("EnvironmentCanvas/DayNightTint").color.a) > 0.0, "night applies a readable dusk tint")
+	_assert_true(bool(presenter.get_node("EnvironmentCanvas/FogLayer").visible), "night fog layer expands with the night phase")
 
 	presenter.call("present_survival", 9, true)
 	_assert_equal(presenter.call("get_moon_phase_index"), 0, "moon phases wrap every eight days")

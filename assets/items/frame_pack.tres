@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_item"]
+[ext_resource type="Script" path="res://scripts/data/equipment_definition.gd" id="2_equipment"]
+
+[sub_resource type="Resource" id="EquipmentDefinition_frame_pack"]
+script = ExtResource("2_equipment")
+id = &"frame_pack"
+slot = 3
+inventory_slot_bonus = 4
+carry_capacity_bonus = 9.0
+move_speed_multiplier = 0.94
+stamina_cost_multiplier = 1.1
+
+[resource]
+script = ExtResource("1_item")
+id = &"frame_pack"
+display_name = "框架背包"
+item_type = 8
+max_stack = 1
+unit_weight = 3.8
+tags = PackedStringArray("equipment", "backpack", "heavy")
+equipment_definition = SubResource("EquipmentDefinition_frame_pack")

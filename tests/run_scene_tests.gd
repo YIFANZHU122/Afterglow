@@ -8,6 +8,12 @@ const PICKUP_OVERLAP_SCENE: PackedScene = preload("res://tests/pickup_overlap_te
 const CONTENT_VALIDATION_MODEL_SCRIPT: Script = preload("res://scripts/data/content_validation_model.gd")
 const HEALTH_COMPONENT_SCRIPT: Script = preload("res://scripts/components/health_component.gd")
 const RECORDING_PRESENTER_SCRIPT: Script = preload("res://tests/recording_actor_presenter.gd")
+const WOOD_ITEM: ItemData = preload("res://assets/items/wood.tres")
+const RATION_ITEM: ItemData = preload("res://assets/items/ration.tres")
+const PISTOL_ITEM: ItemData = preload("res://assets/items/handmade_pistol.tres")
+const PISTOL_AMMO_ITEM: ItemData = preload("res://assets/items/pistol_ammo.tres")
+const FIELD_PACK_ITEM: ItemData = preload("res://assets/items/field_pack.tres")
+const PLAYER_COMMAND_SCRIPT: Script = preload("res://scripts/player/player_command.gd")
 
 var _failures: int = 0
 
@@ -28,6 +34,23 @@ func _run_scene_tests() -> void:
 	_assert_true(start_screen.get_node_or_null("Menu/StartButton") != null, "start screen exposes a start button")
 	_assert_true(start_screen.get_node_or_null("Menu/ContinueButton") != null, "start screen exposes a continue button")
 	_assert_true(start_screen.get_node_or_null("Menu/GrowthButton") != null, "start screen exposes a growth button")
+	_assert_true(start_screen.get_node_or_null("Menu/CharacterButton") != null, "start screen exposes a character configuration button")
+	_assert_true(start_screen.get_node_or_null("Menu/GuideLabel") != null, "start screen exposes first-run controls guidance")
+	if start_screen.get_node_or_null("Menu/GuideLabel") != null:
+		_assert_true((start_screen.get_node("Menu/GuideLabel") as Label).text.contains("空格"), "first-run guidance names the vault control")
+	_assert_true(start_screen.get_node_or_null("CharacterPanel/AttributeLabel") != null, "start screen exposes attribute allocation state")
+	start_screen.call("_show_character")
+	_assert_true((start_screen.get_node("CharacterPanel/AttributeLabel") as Label).text.contains("结晶阶级"), "character configuration shows the permanent crystal tier")
+	start_screen.call("_hide_character")
+	_assert_true(GameManager.has_method("get_meta_crystal_tier"), "GameManager exposes the permanent crystal tier")
+	_assert_true(GameManager.has_method("get_meta_attribute_point_bonus"), "GameManager exposes the permanent attribute point bonus")
+	_assert_true(GameManager.has_method("get_character_attribute_total_points"), "GameManager exposes the current character point budget")
+	if GameManager.has_method("get_character_attribute_total_points") and GameManager.has_method("get_meta_attribute_point_bonus"):
+		_assert_equal(
+			GameManager.get_character_attribute_total_points(),
+			10 + GameManager.get_meta_attribute_point_bonus(),
+			"character configuration includes the permanent crystal-tier point bonus"
+		)
 	_assert_true(GameManager.is_run_idle(), "cold start menu does not automatically begin a run")
 	start_screen.queue_free()
 	await get_tree().process_frame
@@ -48,6 +71,10 @@ func _run_scene_tests() -> void:
 		"basement external area content satisfies the framework contract"
 	)
 	_assert_true(basement.get_node_or_null("Player") != null, "basement instantiates a player")
+	_assert_true(basement.get_node_or_null("FieldPack") != null, "basement exposes a world pickup for a first backpack")
+	_assert_true(basement.get_node_or_null("ClothCap") != null, "basement exposes a world pickup for head equipment")
+	_assert_true(basement.get_node_or_null("CanvasJacket") != null, "basement exposes a world pickup for chest equipment")
+	_assert_true(basement.get_node_or_null("TrailPants") != null, "basement exposes a world pickup for leg equipment")
 	var camera: Camera2D = basement.get_node_or_null("Player/Camera2D") as Camera2D
 	var viewport_size := Vector2(
 		float(ProjectSettings.get_setting("display/window/size/viewport_width")),
@@ -107,12 +134,20 @@ func _run_scene_tests() -> void:
 	_assert_true(GameManager.has_method("depart_floor"), "GameManager exposes an atomic floor departure command")
 	_assert_true(GameManager.has_method("get_total_food_budget"), "GameManager exposes the current floor food budget")
 	_assert_true(GameManager.has_method("get_total_water_budget"), "GameManager exposes the current floor water budget")
+	_assert_true(GameManager.has_method("get_night_fog_phase"), "GameManager exposes the current night fog phase")
+	_assert_true(GameManager.has_method("get_moon_kind"), "GameManager exposes the current moon kind")
+	_assert_true(GameManager.has_method("get_monster_spawn_multiplier"), "GameManager exposes moon spawn pressure")
+	_assert_true(GameManager.has_method("get_special_spawn_ratio"), "GameManager exposes moon special weighting")
+	_assert_true(GameManager.has_method("get_enemy_speed_multiplier"), "GameManager exposes moon movement pressure")
+	_assert_true(GameManager.has_method("get_night_elapsed_seconds"), "GameManager exposes elapsed night time")
+	_assert_true(GameManager.has_method("register_darkness_attack"), "GameManager exposes the darkness mark command")
 	_assert_true(GameManager.has_signal("disaster_changed"), "GameManager exposes disaster state changes")
 	_assert_true(GameManager.has_method("start_disaster"), "GameManager exposes a disaster lifecycle command")
 	_assert_true(GameManager.has_method("advance_disasters"), "GameManager exposes disaster simulation advancement")
 	_assert_true(GameManager.has_method("get_active_disaster_count"), "GameManager exposes active disaster count")
 	_assert_true(GameManager.has_method("get_threat_budget_bonus_ratio"), "GameManager exposes active disaster threat budget modifiers")
 	_assert_true(GameManager.has_method("get_primary_disaster_phase"), "GameManager exposes primary disaster phase")
+	_assert_true(GameManager.has_method("get_environment_effects"), "GameManager exposes aggregated environment effects")
 	_assert_true(GameManager.has_signal("boss_progress_changed"), "GameManager exposes boss progress changes")
 	_assert_true(GameManager.has_method("get_run_seed"), "GameManager exposes the current run seed")
 	_assert_true(GameManager.has_method("get_map_seed"), "GameManager exposes the current map seed")
@@ -126,6 +161,8 @@ func _run_scene_tests() -> void:
 	_assert_true(GameManager.has_method("add_meta_crystals"), "GameManager exposes meta crystal accumulation")
 	_assert_true(GameManager.has_method("configure_floor_disaster_kinds"), "world scenes can constrain disasters to available countermeasures")
 	_assert_true(GameManager.call("start_disaster", 0), "a normal disaster can enter the world lifecycle")
+	var environment_effects: Dictionary = GameManager.call("get_environment_effects")
+	_assert_true(float(environment_effects.get("water_level_delta", 0.0)) >= 1.0, "rain disaster exposes a water level effect")
 	_assert_equal(GameManager.call("get_active_disaster_count"), 1, "warning disasters occupy an active slot")
 	if environment_presenter != null:
 		_assert_equal(environment_presenter.call("get_weather_mode"), &"rainstorm", "disaster signals select the rainstorm presentation")
@@ -175,6 +212,139 @@ func _run_scene_tests() -> void:
 		_assert_equal(GameManager.call("get_total_food_budget"), 11, "normal basement includes guaranteed and emergency food")
 		_assert_equal(GameManager.call("get_total_water_budget"), 15, "normal basement includes guaranteed and emergency water")
 	_assert_true(Inventory.get_items().all(func(item: Variant) -> bool: return item == null), "a new run starts without fixed inventory supplies")
+	_assert_equal(Inventory.get_slot_count(), 8, "new runs expose eight inventory slots")
+	var resource_nodes: Array[Node] = []
+	for resource_node: Node in get_tree().get_nodes_in_group("persistent_resource"):
+		if basement.is_ancestor_of(resource_node):
+			resource_nodes.append(resource_node)
+	_assert_equal(resource_nodes.size(), 3, "basement places three finite resource nodes")
+	var resource_ids: Dictionary = {}
+	for resource_node: Node in resource_nodes:
+		resource_ids[String(resource_node.get("entity_id"))] = true
+	_assert_true(resource_ids.has("basement_wood_01"), "basement places a wood resource node")
+	_assert_true(resource_ids.has("basement_stone_01"), "basement places a stone resource node")
+	_assert_true(resource_ids.has("basement_ration_01"), "basement places a reachable food resource node")
+	var wood_node: Node = basement.get_node("ResourceWoodBasement01")
+	_assert_true(wood_node.has_method("_try_gather"), "wood resource exposes gathering interaction")
+	if wood_node.has_method("_try_gather"):
+		_assert_true(wood_node.call("_try_gather"), "gathering a resource adds output to inventory")
+		var wood_stack: RefCounted = Inventory.get_stacks()[0]
+		_assert_true(wood_stack != null and wood_stack.get_quantity() == 2, "gathering adds the configured quantity")
+		for _gather_index in range(4):
+			wood_node.call("_try_gather")
+		_assert_true(bool(wood_node.call("create_snapshot").get("depleted", false)), "resource node becomes depleted after its finite supply is gathered")
+		_assert_true(not bool(wood_node.call("_try_gather")), "depleted resource rejects repeated interaction")
+	var campfire: Node = basement.get_node_or_null("CampfireBasement01")
+	var basement_player_for_processing: Node2D = basement.get_node("Player") as Node2D
+	_assert_true(campfire != null, "basement places a campfire interaction")
+	if campfire != null:
+		_assert_true(campfire.has_method("add_fuel_from_inventory"), "campfire exposes fuel interaction")
+		_assert_true(bool(campfire.call("add_fuel_from_inventory")), "campfire consumes wood for fuel")
+		_assert_true(bool(campfire.call("ignite_with_lighter")), "campfire can be lit with a lighter")
+		_assert_true(bool(campfire.call("is_lit")), "lit campfire reports its active state")
+		_assert_true(float(campfire.call("get_light_radius")) > 0.0, "lit campfire exposes a light radius")
+		_assert_true(bool(campfire.call("advance_burning", 10.0, 0, false)), "campfire advances its fuel in the live scene")
+		basement_player_for_processing.global_position = (campfire as Node2D).global_position
+		await get_tree().physics_frame
+		Inventory.reset_for_new_run()
+		var raw_meat: ItemData = preload("res://assets/items/raw_meat.tres")
+		var processing_container: ItemData = preload("res://assets/items/medium_container.tres")
+		_assert_true(Inventory.add_item(raw_meat), "campfire processing receives raw meat")
+		_assert_true(Inventory.add_item(processing_container), "campfire processing receives a container")
+		Inventory.set_selected_slot(1)
+		_assert_equal(Inventory.get_selected_slot(), 1, "campfire selects the processing container")
+		_assert_true(Inventory.fill_selected_container(3, 1, false), "campfire processing receives dirty water")
+		_assert_true(bool(campfire.call("start_purifying")), "lit campfire starts purification in range")
+		Inventory.set_selected_slot(0)
+		_assert_equal(Inventory.get_selected_slot(), 0, "campfire selects the cooking slot")
+		_assert_true(bool(campfire.call("start_cooking")), "lit campfire starts cooking in range")
+		_assert_true(bool(campfire.call("advance_processing", 8.0, false, false, true)), "campfire advances both processing slots")
+		_assert_true(bool(campfire.call("is_cooking_complete")), "campfire cooking completes")
+		_assert_true(bool(campfire.call("is_purifying_complete")), "campfire purification completes")
+		_assert_true(bool(Inventory.get_container_snapshot_at(1).get("purified", false)), "campfire purification keeps the locked container result")
+	var torch: Node = basement.get_node_or_null("TorchBasement01")
+	_assert_true(torch != null and torch is Area2D, "basement places a torch interaction area")
+	if torch != null:
+		_assert_true(torch.has_method("ignite_with_lighter"), "torch exposes lighter ignition")
+		_assert_true(torch.has_method("ignite_from_campfire"), "torch exposes campfire ignition")
+		_assert_true(bool(torch.call("ignite_from_campfire")), "torch can be lit from a campfire")
+		_assert_true(float(torch.call("get_light_radius")) > 0.0, "lit torch exposes a local light radius")
+		var torch_snapshot: Dictionary = torch.call("create_snapshot")
+		_assert_true(bool(torch.call("extinguish")), "torch can be extinguished")
+		_assert_true(bool(torch.call("restore_snapshot", torch_snapshot)), "torch restores its runtime snapshot")
+	var shelter: Node = basement.get_node_or_null("RainShelterBasement01")
+	var wall: Node = basement.get_node_or_null("WoodWallBasement01")
+	_assert_true(shelter != null and shelter is StaticBody2D, "basement places a collidable rain shelter")
+	_assert_true(wall != null and wall is StaticBody2D, "basement places a collidable wooden wall")
+	if shelter != null:
+		_assert_true(float(shelter.call("get_health")) == 160.0, "rain shelter starts with its configured health")
+		_assert_true(bool(shelter.call("take_damage", 20.0)), "rain shelter accepts damage")
+		_assert_true(float(shelter.call("get_health")) == 140.0, "rain shelter health decreases after damage")
+		var shelter_snapshot: Dictionary = shelter.call("create_snapshot")
+		_assert_true(bool(shelter.call("restore_snapshot", shelter_snapshot)), "rain shelter restores its health and position")
+	if wall != null:
+		_assert_true(float(wall.call("get_health")) == 100.0, "wood wall starts with its configured health")
+		basement_player_for_processing.global_position = basement.get_node("PlayerSpawn").global_position
+		await get_tree().physics_frame
+	Inventory.reset_for_new_run()
+	var water_source: Node = basement.get_node_or_null("WaterSourceBasement01")
+	_assert_true(water_source != null, "basement exposes a reusable water source")
+	_assert_true(GameManager.has_method("fill_selected_container_from_source"), "GameManager exposes selected-container filling")
+	if water_source != null:
+		_assert_true(absf(float(water_source.call("get_disease_chance_for_difficulty", 0)) - 0.35) <= 0.0001, "puddle source uses the normal disease rate")
+		_assert_true(absf(float(water_source.call("get_disease_chance_for_difficulty", 2)) - 0.45) <= 0.0001, "puddle source scales disease rate on hell")
+		var empty_container: ItemData = preload("res://assets/items/empty_container.tres")
+		_assert_true(Inventory.add_item(empty_container), "inventory accepts the starting empty container")
+		_assert_true(water_source.call("fill_selected_container"), "water source fills the selected container")
+		_assert_equal(int(Inventory.get_selected_container_snapshot().get("amount", 0)), 1, "filled container stores one water unit")
+		var water_before_drink: float = GameManager.get_water()
+		_assert_true(GameManager.use_selected_item(), "filled container can be consumed")
+		_assert_true(GameManager.get_water() > water_before_drink, "drinking updates water")
+		_assert_equal(int(Inventory.get_selected_container_snapshot().get("amount", 0)), 0, "drinking returns the container to empty")
+	Inventory.reset_for_new_run()
+	var hunger_before_food: float = GameManager.get_hunger()
+	_assert_true(Inventory.add_item(RATION_ITEM), "inventory accepts a usable food item")
+	_assert_true(GameManager.use_selected_item(), "selected food item can be consumed in a live run")
+	_assert_true(GameManager.get_hunger() > hunger_before_food, "food consumption updates hunger")
+	_assert_true(Inventory.get_selected_item() == null, "consumed food is removed atomically")
+	Inventory.reset_for_new_run()
+	var inventory_bar: Control = basement.get_node_or_null("Player/HUD/InventoryBar") as Control
+	_assert_true(inventory_bar != null, "player HUD contains the inventory bar")
+	var equipment_bar: Node = basement.get_node_or_null("Player/HUD/EquipmentBar")
+	_assert_true(equipment_bar != null, "player HUD contains an actionable equipment bar")
+	if equipment_bar != null:
+		_assert_equal(equipment_bar.get_node("Slots").get_child_count(), 4, "equipment bar exposes head, chest, legs, and backpack slots")
+		_assert_true(equipment_bar.has_signal("unequip_requested"), "equipment bar emits a semantic unequip command")
+	if inventory_bar != null:
+		var inventory_slots: HBoxContainer = inventory_bar.get_node_or_null("Slots") as HBoxContainer
+		_assert_true(inventory_slots != null, "inventory bar contains a slots container")
+		if inventory_slots != null:
+			_assert_equal(inventory_slots.get_child_count(), 8, "inventory bar builds eight stable slots")
+		_assert_true(inventory_bar.get_node_or_null("Weight") is Label, "inventory bar displays weight")
+	_assert_true(GameManager.has_method("start_equipping_selected_item"), "GameManager exposes a timed selected-equipment command")
+	_assert_true(GameManager.has_method("advance_character_equipment_interaction"), "GameManager exposes equipment interaction advancement")
+	_assert_true(GameManager.has_method("start_unequipping_character_slot"), "GameManager exposes a timed unequip command")
+	_assert_true(Inventory.add_item(FIELD_PACK_ITEM), "live inventory accepts a field pack")
+	if GameManager.has_method("start_equipping_selected_item") and GameManager.has_method("advance_character_equipment_interaction"):
+		_assert_true(GameManager.start_equipping_selected_item(), "selected field pack begins a timed equipment interaction")
+		_assert_true(not GameManager.advance_character_equipment_interaction(1.0, false, false), "equipment is not committed before two standing seconds")
+		_assert_true(GameManager.get_character_build_model().get_equipped_item_id(3).is_empty(), "partial equipment interaction leaves the slot unchanged")
+		_assert_true(not GameManager.advance_character_equipment_interaction(0.1, true, false), "movement interrupts a pending equipment interaction")
+		_assert_true(GameManager.get_character_build_model().get_equipped_item_id(3).is_empty(), "movement interruption keeps the backpack unequipped")
+		_assert_true(GameManager.start_equipping_selected_item(), "interrupted equipment interaction can restart")
+		basement.get_node("Player").call("_physics_process", 2.0)
+		_assert_equal(GameManager.get_character_build_model().get_equipped_item_id(3), &"field_pack", "timed equipment interaction equips the field pack")
+		_assert_equal(Inventory.get_slot_count(), 10, "equipped field pack expands the live inventory")
+		if inventory_bar != null:
+			_assert_equal(inventory_bar.get_node("Slots").get_child_count(), 10, "inventory bar rebuilds to the expanded capacity")
+		if equipment_bar != null:
+			equipment_bar.get_node("Slots").get_child(3).emit_signal("pressed")
+		_assert_true(GameManager.get_character_equipment_interaction_remaining_seconds() > 0.0, "clicking the backpack slot begins a timed unequip interaction")
+		_assert_true(GameManager.advance_character_equipment_interaction(2.0, false, false), "standing for two seconds commits backpack removal")
+		_assert_true(GameManager.get_character_build_model().get_equipped_item_id(3).is_empty(), "timed unequip clears the backpack slot")
+		_assert_equal(Inventory.get_slot_count(), 8, "unequipping the field pack restores base inventory capacity")
+		_assert_true(Inventory.get_items().any(func(item: ItemData) -> bool: return item != null and item.id == &"field_pack"), "unequipping returns the field pack to inventory")
+	Inventory.reset_for_new_run()
 	_assert_equal(GameManager.get_run_difficulty(), 0, "a run started without an explicit choice uses normal difficulty")
 	_assert_true(not GameManager.set_run_difficulty(1), "difficulty is locked after the run starts")
 	var hunger_at_entry: float = GameManager.get_hunger()
@@ -269,6 +439,7 @@ func _run_scene_tests() -> void:
 	var transition_zone: Node = basement.get_node("TransitionZone")
 	_assert_true(bool(transition_zone.get("requires_objective_complete")), "basement exit requires objective completion")
 	_assert_true(transition_zone.get("requires_escape_startup") == true, "basement exit requires escape startup completion")
+	_assert_true(transition_zone.has_method("resolve_next_floor_scene"), "floor exits resolve the next scene through the world catalog")
 	_assert_equal(transition_zone.get("final_floor_scene"), "res://scenes/world/final_core/final_core.tscn", "the fifth-floor exit routes the final floor to the final core scene")
 	_assert_equal((transition_zone as Area2D).collision_mask, 3, "escape exit monitors both player and enemy collision layers")
 	var escape_part: Node = basement.get_node_or_null("EscapeParts0")
@@ -378,6 +549,21 @@ func _run_scene_tests() -> void:
 	_assert_true(not is_instance_valid(dropped_sword), "a world item dropped under the player can be picked up without moving away")
 	picked_item = Inventory.get_selected_item()
 	_assert_true(picked_item != null and picked_item.id == &"stone_sword", "re-picked dropped item returns to inventory")
+	_assert_true(Inventory.add_quantity(WOOD_ITEM, 4), "inventory accepts a four-item material stack")
+	Inventory.set_selected_slot(1)
+	Input.action_press(&"drop")
+	await get_tree().physics_frame
+	Input.action_release(&"drop")
+	await get_tree().physics_frame
+	var dropped_stack: Node = get_node_or_null("ItemWorld")
+	_assert_true(dropped_stack != null and dropped_stack.has_method("get_stack"), "dropping a stack creates a stack-aware world item")
+	if dropped_stack != null and dropped_stack.has_method("get_stack"):
+		var world_stack: RefCounted = dropped_stack.call("get_stack")
+		_assert_true(world_stack != null and world_stack.get_quantity() == 4, "world item preserves the full dropped quantity")
+	await _press_interact_key(dropped_stack)
+	_assert_true(not is_instance_valid(dropped_stack), "stack world item can be picked up")
+	_assert_equal(Inventory.get_stacks()[1].get_quantity(), 4, "re-pickup restores the full stack quantity")
+	Inventory.set_selected_slot(0)
 	var player_health: Node = player.get_node("HealthComponent")
 	var health_before_environment: float = float(player_health.call("get_health"))
 	GameManager.survival_environment_damage.emit(0.01)
@@ -531,6 +717,25 @@ func _run_scene_tests() -> void:
 	_assert_equal(GameManager.get_run_xp(), 0, "xp threshold is consumed by the level-up")
 	_assert_equal(GameManager.get_run_level(), 2, "enemy defeats grant a level")
 	GameManager.add_run_xp(30)
+	var firearm_player: Node = basement.get_node_or_null("Player")
+	if firearm_player != null:
+		Inventory.reset_for_new_run()
+		_assert_true(Inventory.add_item(PISTOL_ITEM), "scene can equip the graybox firearm")
+		_assert_true(Inventory.add_quantity(PISTOL_AMMO_ITEM, 2), "scene can carry firearm ammunition")
+		Inventory.set_selected_slot(0)
+		firearm_player.call("_handle_attack_input", PLAYER_COMMAND_SCRIPT.new(Vector2.ZERO, false, true))
+		var weapon: RefCounted = firearm_player.get("_ranged_weapon") as RefCounted
+		_assert_true(weapon != null and weapon.is_reloading(), "empty firearm begins a timed reload")
+		firearm_player.call("_advance_ranged_weapon", 0.2, Vector2.RIGHT)
+		_assert_true(weapon != null and not weapon.is_reloading(), "movement interrupts firearm reload")
+		firearm_player.call("_handle_attack_input", PLAYER_COMMAND_SCRIPT.new(Vector2.ZERO, false, true))
+		firearm_player.call("_advance_ranged_weapon", 2.1, Vector2.ZERO)
+		_assert_true(weapon != null and weapon.get_magazine_rounds() > 0, "stationary player completes firearm reload")
+		var stamina_before_fire: float = float((firearm_player.get("_stamina_model") as RefCounted).get_stamina())
+		firearm_player.call("_handle_attack_input", PLAYER_COMMAND_SCRIPT.new(Vector2.ZERO, false, true))
+		var stamina_after_fire: float = float((firearm_player.get("_stamina_model") as RefCounted).get_stamina())
+		_assert_true(stamina_after_fire >= stamina_before_fire, "firearm shooting does not consume stamina")
+	Inventory.reset_for_new_run()
 	basement.queue_free()
 	await get_tree().process_frame
 	var cihang: Node = CIHANG_SCENE.instantiate()
@@ -555,6 +760,28 @@ func _run_scene_tests() -> void:
 	_assert_true(cihang.get_node_or_null("CihangTerrainArt/DesertRuins") is Polygon2D, "terrain art exposes the desert ruins region")
 	_assert_true(cihang.get_node_or_null("CihangTerrainArt/NorthRoute") is Polygon2D, "terrain art exposes the north route")
 	_assert_true(cihang.get_node_or_null("CihangTerrainArt/SouthRoute") is Polygon2D, "terrain art exposes the south route")
+	_assert_true(cihang.get_node_or_null("VaultObstacleCihang01") is Area2D, "cihang exposes a vault context zone")
+	_assert_true(cihang.get_node_or_null("DeepWaterCihang01") is Area2D, "cihang exposes a deep-water context zone")
+	_assert_true(cihang.get_node_or_null("DiggableCollapseCihang01") is Area2D, "cihang exposes a diggable collapse context zone")
+	var catalog_for_regions: RefCounted = preload("res://scripts/world/world_scene_catalog.gd").new()
+	_assert_true(catalog_for_regions.get_scene_path(3).ends_with("flooded_settlement.tscn"), "floor three has an independent flooded settlement scene path")
+	_assert_true(catalog_for_regions.get_scene_path(4).ends_with("abandoned_industry.tscn"), "floor four has an independent industrial scene path")
+	_assert_true(catalog_for_regions.get_scene_path(5).ends_with("polluted_forest.tscn"), "floor five has an independent polluted forest scene path")
+	for region_path: String in [catalog_for_regions.get_scene_path(3), catalog_for_regions.get_scene_path(4), catalog_for_regions.get_scene_path(5)]:
+		var region_scene: PackedScene = load(region_path) as PackedScene
+		_assert_true(region_scene != null, "region scene loads from its independent path: %s" % region_path)
+		if region_scene != null:
+			var region_instance: Node = region_scene.instantiate()
+			add_child(region_instance)
+			await get_tree().process_frame
+			_assert_true(region_instance.get_node_or_null("RegionProfile") != null, "region scene exposes its profile node: %s" % region_path)
+			region_instance.queue_free()
+			await get_tree().process_frame
+	var traversal_player: CharacterBody2D = cihang.get_node("Player") as CharacterBody2D
+	_assert_true(traversal_player.has_method("set_traversal_context"), "player exposes the typed traversal context injection")
+	if traversal_player.has_method("set_traversal_context"):
+		traversal_player.call("set_traversal_context", 2, 6, 0, 2, false)
+		_assert_equal(int(traversal_player.call("create_snapshot").get("traversal", {}).get("water_depth_steps", -1)), 2, "player snapshot includes the injected water depth")
 	var cihang_objective_label: Label = cihang.get_node_or_null("ObjectiveHUD/ObjectiveLabel") as Label
 	_assert_true(cihang_objective_label != null, "cihang outskirts exposes a dedicated objective HUD")
 	if cihang_objective_label != null:
@@ -563,6 +790,12 @@ func _run_scene_tests() -> void:
 			cihang_objective_label.text.contains("探索") or cihang_objective_label.text.contains("生存"),
 			"cihang objective HUD communicates an exploration or survival goal"
 		)
+	var cihang_resource_ids: Dictionary = {}
+	for resource_node: Node in get_tree().get_nodes_in_group("persistent_resource"):
+		if cihang.is_ancestor_of(resource_node):
+			cihang_resource_ids[String(resource_node.get("entity_id"))] = true
+	_assert_true(cihang_resource_ids.has("cihang_wild_food_01"), "cihang places a wild food resource node")
+	_assert_true(cihang_resource_ids.has("cihang_scrap_01"), "cihang places a scrap resource node")
 	var cihang_background: Polygon2D = cihang.get_node("Background") as Polygon2D
 	var cihang_terrain_art: Node2D = cihang.get_node("CihangTerrainArt") as Node2D
 	_assert_true(
@@ -631,7 +864,39 @@ func _run_scene_tests() -> void:
 		var cihang_silhouette: CanvasItem = cihang_environment_presenter.get_node_or_null("SkyCanvas/WastelandSilhouette") as CanvasItem
 		_assert_true(cihang_silhouette != null and not cihang_silhouette.visible, "cihang disables the screen-fixed wasteland silhouette")
 	_assert_true(cihang.get_node_or_null("ParasiticFlowerScarlet") != null, "cihang outskirts includes a scarlet parasitic flower variant")
-	_assert_true(cihang.get_node_or_null("ParasiticFlowerAshen") != null, "cihang outskirts includes an ashen parasitic flower variant")
+	var dynamic_director: Node = cihang.get_node_or_null("DynamicSpawnDirector")
+	_assert_true(dynamic_director != null, "cihang outskirts instantiates the dynamic spawn director")
+	if dynamic_director != null:
+		_assert_equal((dynamic_director.get("spawn_points") as Array).size(), 2, "cihang configures two tagged fog spawn points")
+		_assert_true(dynamic_director.has_method("get_dynamic_enemy_count"), "dynamic spawn director exposes non-objective enemy count")
+		var fixed_enemy_count_before: int = 0
+		for fixed_candidate: Node in get_tree().get_nodes_in_group("enemy"):
+			if cihang.is_ancestor_of(fixed_candidate) and not fixed_candidate.is_in_group("dynamic_enemy"):
+				fixed_enemy_count_before += 1
+		_assert_true(GameManager.start_next_floor(), "dynamic spawn validation can advance from the prior cleared floor")
+		_assert_true(GameManager.prepare_floor(), "dynamic spawn validation enters an exploring state")
+		_assert_true(GameManager.tick_survival(720.0) >= 0.0, "survival clock can enter the first night for dynamic spawn validation")
+		dynamic_director.call("_process", 100.0)
+		await get_tree().process_frame
+		_assert_equal(dynamic_director.call("get_dynamic_enemy_count"), 1, "night fog director spawns one independent dynamic enemy wave")
+		var fixed_enemy_count_after: int = 0
+		for fixed_candidate_after: Node in get_tree().get_nodes_in_group("enemy"):
+			if cihang.is_ancestor_of(fixed_candidate_after) and not fixed_candidate_after.is_in_group("dynamic_enemy"):
+				fixed_enemy_count_after += 1
+		_assert_equal(fixed_enemy_count_after, fixed_enemy_count_before, "dynamic enemies do not change fixed encounter target membership")
+		var dynamic_snapshot: Dictionary = dynamic_director.call("create_snapshot")
+		_assert_true(dynamic_snapshot.has("threat_budget"), "dynamic director snapshots its independent threat budget")
+		_assert_true(dynamic_director.call("restore_snapshot", dynamic_snapshot), "dynamic director restores active enemies atomically")
+		_assert_equal(dynamic_director.call("get_dynamic_enemy_count"), 1, "restored dynamic director rebuilds active entity count")
+		var restored_dynamic_enemy: Node = (get_tree().get_nodes_in_group("dynamic_enemy")[0] as Node)
+		var restored_dynamic_health: Node = restored_dynamic_enemy.get_node_or_null("HealthComponent")
+		if restored_dynamic_health != null:
+			restored_dynamic_health.call("take_damage", 1000.0)
+		_assert_true(restored_dynamic_health != null and restored_dynamic_health.call("is_dead"), "dynamic enemy can be defeated after restore")
+		await get_tree().process_frame
+		_assert_equal(dynamic_director.call("get_dynamic_enemy_count"), 0, "defeated dynamic enemy releases its director slot")
+		_assert_true(GameManager.complete_objective(), "dynamic spawn validation restores the completed objective state")
+		_assert_true(cihang.get_node_or_null("ParasiticFlowerAshen") != null, "cihang outskirts includes an ashen parasitic flower variant")
 	_assert_true(cihang.get_node_or_null("ParasiticFlowerViolet") != null, "cihang outskirts includes a violet parasitic flower variant")
 	_assert_true(cihang.get_node_or_null("ParasiticFlowerScarlet/EncounterMember") == null, "parasitic flowers remain decorative and outside encounter targets")
 	var cihang_player_health: Node = cihang.get_node("Player/HealthComponent")

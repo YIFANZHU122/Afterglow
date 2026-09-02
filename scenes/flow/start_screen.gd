@@ -9,6 +9,7 @@ const BASEMENT_SCENE_PATH: String = "res://scenes/world/basement/basement.tscn"
 @onready var start_button: Button = $Menu/StartButton
 @onready var continue_button: Button = $Menu/ContinueButton
 @onready var growth_button: Button = $Menu/GrowthButton
+@onready var character_button: Button = $Menu/CharacterButton
 @onready var quit_button: Button = $Menu/QuitButton
 @onready var meta_label: Label = $GrowthPanel/MetaLabel
 @onready var growth_status: Label = $GrowthPanel/Status
@@ -20,6 +21,13 @@ const BASEMENT_SCENE_PATH: String = "res://scenes/world/basement/basement.tscn"
 @onready var luck_growth_button: Button = $GrowthPanel/LuckGrowthButton
 @onready var reroll_growth_button: Button = $GrowthPanel/RerollGrowthButton
 @onready var back_button: Button = $GrowthPanel/BackButton
+@onready var character_panel: Panel = $CharacterPanel
+@onready var attribute_label: Label = $CharacterPanel/AttributeLabel
+@onready var intelligence_button: Button = $CharacterPanel/IntelligenceButton
+@onready var strength_button: Button = $CharacterPanel/StrengthButton
+@onready var vitality_button: Button = $CharacterPanel/VitalityButton
+@onready var confirm_attributes_button: Button = $CharacterPanel/ConfirmButton
+@onready var character_back_button: Button = $CharacterPanel/BackButton
 
 var _selected_difficulty: int = 0
 
@@ -29,6 +37,7 @@ func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	continue_button.pressed.connect(_on_continue_pressed)
 	growth_button.pressed.connect(_show_growth)
+	character_button.pressed.connect(_show_character)
 	quit_button.pressed.connect(_on_quit_pressed)
 	damage_growth_button.pressed.connect(_purchase_damage_growth)
 	speed_growth_button.pressed.connect(_purchase_speed_growth)
@@ -38,9 +47,15 @@ func _ready() -> void:
 	luck_growth_button.pressed.connect(_purchase_luck_growth)
 	reroll_growth_button.pressed.connect(_purchase_reroll_growth)
 	back_button.pressed.connect(_hide_growth)
+	intelligence_button.pressed.connect(func() -> void: _allocate_character(0))
+	strength_button.pressed.connect(func() -> void: _allocate_character(1))
+	vitality_button.pressed.connect(func() -> void: _allocate_character(2))
+	confirm_attributes_button.pressed.connect(_confirm_character)
+	character_back_button.pressed.connect(_hide_character)
 	GameManager.meta_progression_changed.connect(_on_meta_progression_changed)
 	_refresh_menu()
 	_hide_growth()
+	_hide_character()
 
 
 func _on_difficulty_selected(index: int) -> void:
@@ -70,6 +85,7 @@ func _on_quit_pressed() -> void:
 
 func _show_growth() -> void:
 	menu.visible = false
+	character_panel.visible = false
 	growth_panel.visible = true
 	_refresh_growth()
 
@@ -78,6 +94,60 @@ func _hide_growth() -> void:
 	growth_panel.visible = false
 	menu.visible = true
 	_refresh_menu()
+
+
+func _show_character() -> void:
+	menu.visible = false
+	growth_panel.visible = false
+	character_panel.visible = true
+	_refresh_character()
+
+
+func _hide_character() -> void:
+	character_panel.visible = false
+	menu.visible = true
+	_refresh_menu()
+
+
+func _allocate_character(attribute: int) -> void:
+	if not GameManager.allocate_character_attribute(attribute, 1):
+		_set_character_status("无法分配：点数不足、属性已达上限或已确认。")
+	_refresh_character()
+
+
+func _confirm_character() -> void:
+	if not GameManager.confirm_character_attributes():
+		_set_character_status("请先分配完全部属性点。")
+	else:
+		_set_character_status("本局属性已确认，进入地图后不可修改。")
+	_refresh_character()
+
+
+func _refresh_character() -> void:
+	if not is_node_ready():
+		return
+	var intelligence: int = GameManager.get_character_attribute_value(0)
+	var strength: int = GameManager.get_character_attribute_value(1)
+	var vitality: int = GameManager.get_character_attribute_value(2)
+	var remaining: int = GameManager.get_character_attribute_points_remaining()
+	attribute_label.text = "结晶阶级 %d  (+%d点)\n剩余点数  %d\n智力  %d   力量  %d   体力  %d" % [
+		GameManager.get_meta_crystal_tier(),
+		GameManager.get_meta_attribute_point_bonus(),
+		remaining,
+		intelligence,
+		strength,
+		vitality,
+	]
+	var confirmed: bool = GameManager.are_character_attributes_confirmed()
+	intelligence_button.disabled = confirmed or remaining <= 0
+	strength_button.disabled = confirmed or remaining <= 0
+	vitality_button.disabled = confirmed or remaining <= 0
+	confirm_attributes_button.disabled = confirmed or remaining > 0
+
+
+func _set_character_status(message: String) -> void:
+	if character_panel != null:
+		character_panel.get_node("Status").text = message
 
 
 func _purchase_damage_growth() -> void:

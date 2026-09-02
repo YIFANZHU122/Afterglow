@@ -12,6 +12,9 @@ const ATTACK_ACTION: StringName = &"attack"
 const CYCLE_PREV_ACTION: StringName = &"cycle_prev"
 const CYCLE_NEXT_ACTION: StringName = &"cycle_next"
 const DROP_ACTION: StringName = &"drop"
+const USE_ACTION: StringName = &"use_item"
+const VAULT_ACTION: StringName = &"vault"
+const DIG_ACTION: StringName = &"dig"
 
 
 func collect_command() -> PlayerCommand:
@@ -27,12 +30,15 @@ func collect_command() -> PlayerCommand:
 		Input.is_action_just_pressed(ATTACK_ACTION),
 		cycle_delta,
 		_get_selected_slot(),
-		Input.is_action_just_pressed(DROP_ACTION)
+		Input.is_action_just_pressed(DROP_ACTION),
+		Input.is_action_just_pressed(USE_ACTION),
+		Input.is_action_just_pressed(VAULT_ACTION),
+		Input.is_action_just_pressed(DIG_ACTION)
 	)
 
 
 func _get_selected_slot() -> int:
-	for slot_index in range(5):
+	for slot_index in range(Inventory.SLOT_COUNT):
 		if Input.is_action_just_pressed(&"slot_%d" % (slot_index + 1)):
 			return slot_index
 	return PlayerCommand.NO_SELECTED_SLOT

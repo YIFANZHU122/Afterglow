@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_definition.gd" id="1_recipe"]
+[ext_resource type="Script" path="res://scripts/data/recipe_ingredient.gd" id="2_ingredient"]
+[ext_resource type="Resource" path="res://assets/items/temporary_container.tres" id="3_output"]
+[ext_resource type="Resource" path="res://assets/items/scrap_parts.tres" id="4_scrap"]
+
+[sub_resource type="Resource" id="RecipeIngredient_scrap"]
+script = ExtResource("2_ingredient")
+item = ExtResource("4_scrap")
+quantity = 2
+
+[resource]
+script = ExtResource("1_recipe")
+id = &"temporary_container"
+display_name = "制作临时容器"
+description = "制作一个只能容纳少量水的临时容器。"
+output_item = ExtResource("3_output")
+ingredients = Array[Resource]([SubResource("RecipeIngredient_scrap")])
+craft_time_seconds = 5.0

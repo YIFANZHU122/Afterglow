@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/cihang_outskirts/cihang_outskirts.gd" id="1_cihang_script"]
 [ext_resource type="PackedScene" path="res://scenes/characters/player/player.tscn" id="2_player_scene"]
@@ -10,12 +10,37 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/wilderness_tree/wilderness_tree.tscn" id="8_wilderness_tree"]
 [ext_resource type="PackedScene" path="res://scenes/objects/wilderness_rock/wilderness_rock.tscn" id="9_wilderness_rock"]
 [ext_resource type="PackedScene" path="res://scenes/objects/wilderness_wreck/wilderness_wreck.tscn" id="10_wilderness_wreck"]
+[ext_resource type="PackedScene" path="res://scenes/objects/gatherable_resource/gatherable_resource.tscn" id="11_gatherable_scene"]
+[ext_resource type="Resource" path="res://assets/world_resources/wild_food_resource.tres" id="12_wild_food_resource"]
+[ext_resource type="Resource" path="res://assets/world_resources/scrap_resource.tres" id="13_scrap_resource"]
+[ext_resource type="PackedScene" path="res://scenes/objects/chaser_enemy/chaser_enemy.tscn" id="14_chaser_enemy"]
+[ext_resource type="Script" path="res://scenes/objects/dynamic_spawn_director/dynamic_spawn_director.gd" id="15_spawn_director"]
+[ext_resource type="Script" path="res://scripts/data/dynamic_spawn_point_definition.gd" id="16_spawn_point"]
+[ext_resource type="PackedScene" path="res://scenes/objects/traversal_surface/traversal_surface.tscn" id="17_traversal_surface"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h"]
 size = Vector2(5760, 40)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_v"]
 size = Vector2(40, 3240)
+
+[sub_resource type="Resource" id="DynamicSpawnPoint_0"]
+script = ExtResource("16_spawn_point")
+id = &"cihang_fog_west"
+position = Vector2(1450, 920)
+tags = PackedStringArray("forest", "west")
+threat_cost = 2
+weight = 1.0
+special_weight = 0.2
+
+[sub_resource type="Resource" id="DynamicSpawnPoint_1"]
+script = ExtResource("16_spawn_point")
+id = &"cihang_fog_east"
+position = Vector2(4700, 2300)
+tags = PackedStringArray("scrub", "east")
+threat_cost = 2
+weight = 1.0
+special_weight = 0.2
 
 [node name="CihangOutskirts" type="Node2D"]
 script = ExtResource("1_cihang_script")
@@ -137,6 +162,17 @@ scale = Vector2(0.9, 0.9)
 
 [node name="DebugController" parent="." instance=ExtResource("6_debug_controller")]
 
+[node name="DynamicContentRoot" type="Node2D" parent="."]
+
+[node name="DynamicSpawnDirector" type="Node" parent="."]
+script = ExtResource("15_spawn_director")
+enemy_scene = ExtResource("14_chaser_enemy")
+spawn_points = Array[Resource]([SubResource("DynamicSpawnPoint_0"), SubResource("DynamicSpawnPoint_1")])
+protected_point_paths = Array[NodePath]([NodePath("PlayerSpawn"), NodePath("FromBasementSpawn"), NodePath("TransitionZone")])
+map_center = Vector2(2880, 1620)
+map_radius = 2800.0
+max_dynamic_enemies = 4
+
 [node name="ParasiticFlowerScarlet" parent="." instance=ExtResource("5_flower")]
 position = Vector2(1320, 900)
 variant = "scarlet"
@@ -147,4 +183,29 @@ variant = "ashen"
 
 [node name="ParasiticFlowerViolet" parent="." instance=ExtResource("5_flower")]
 position = Vector2(3400, 720)
+
+[node name="ResourceWildFoodCihang01" parent="." instance=ExtResource("11_gatherable_scene")]
+position = Vector2(2200, 1080)
+entity_id = &"cihang_wild_food_01"
+resource_definition = ExtResource("12_wild_food_resource")
+
+[node name="ResourceScrapCihang01" parent="." instance=ExtResource("11_gatherable_scene")]
+position = Vector2(4300, 1860)
+entity_id = &"cihang_scrap_01"
+resource_definition = ExtResource("13_scrap_resource")
 variant = "violet"
+
+[node name="VaultObstacleCihang01" parent="." instance=ExtResource("17_traversal_surface")]
+position = Vector2(2020, 1620)
+vault_height_steps = 2
+terrain_kind = 5
+
+[node name="DeepWaterCihang01" parent="." instance=ExtResource("17_traversal_surface")]
+position = Vector2(3900, 2420)
+terrain_kind = 6
+water_depth_steps = 2
+
+[node name="DiggableCollapseCihang01" parent="." instance=ExtResource("17_traversal_surface")]
+position = Vector2(4700, 920)
+terrain_kind = 4
+terrain_depth_steps = 2

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/recipe_definition.gd" id="1_recipe"]
+[ext_resource type="Script" path="res://scripts/data/recipe_ingredient.gd" id="2_ingredient"]
+[ext_resource type="Resource" path="res://assets/items/stone_knife.tres" id="3_output"]
+[ext_resource type="Resource" path="res://assets/items/stone.tres" id="4_stone"]
+[ext_resource type="Resource" path="res://assets/items/wood.tres" id="5_wood"]
+
+[sub_resource type="Resource" id="RecipeIngredient_stone"]
+script = ExtResource("2_ingredient")
+item = ExtResource("4_stone")
+quantity = 2
+
+[sub_resource type="Resource" id="RecipeIngredient_wood"]
+script = ExtResource("2_ingredient")
+item = ExtResource("5_wood")
+quantity = 1
+
+[resource]
+script = ExtResource("1_recipe")
+id = &"stone_knife"
+display_name = "制作石刀"
+description = "制作一把可靠的近战石刀。"
+output_item = ExtResource("3_output")
+ingredients = Array[Resource]([SubResource("RecipeIngredient_stone"), SubResource("RecipeIngredient_wood")])
+craft_time_seconds = 6.0

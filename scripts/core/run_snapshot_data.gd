@@ -3,7 +3,8 @@ class_name RunSnapshotData
 
 ## 运行存档固定 schema。各分区由对应领域模型生成，禁止调用方追加未登记的顶层字段。
 
-const CURRENT_SCHEMA_VERSION: int = 1
+const CURRENT_SCHEMA_VERSION: int = 2
+const SUPPORTED_SCHEMA_VERSIONS: Array[int] = [1, 2]
 const REQUIRED_SECTION_NAMES: Array[StringName] = [
 	&"run_session_state",
 	&"random_stream_state",
@@ -30,6 +31,7 @@ var disaster_state: Dictionary = {}
 var player_state: Dictionary = {}
 var enemy_state: Dictionary = {}
 var inventory_state: Dictionary = {}
+var character_build_state: Dictionary = {}
 var building_state: Dictionary = {}
 var interaction_state: Dictionary = {}
 
@@ -48,6 +50,7 @@ func to_dictionary() -> Dictionary:
 		"player_state": player_state.duplicate(true),
 		"enemy_state": enemy_state.duplicate(true),
 		"inventory_state": inventory_state.duplicate(true),
+		"character_build_state": character_build_state.duplicate(true),
 		"building_state": building_state.duplicate(true),
 		"interaction_state": interaction_state.duplicate(true),
 	}
@@ -58,7 +61,7 @@ func from_dictionary(data: Dictionary) -> bool:
 		if not data.has(key):
 			return false
 	var restored_version: int = int(data["schema_version"])
-	if restored_version != CURRENT_SCHEMA_VERSION:
+	if not SUPPORTED_SCHEMA_VERSIONS.has(restored_version):
 		return false
 	if not data["settlement_id"] is String or not data["invalidated"] is bool:
 		return false
@@ -67,11 +70,18 @@ func from_dictionary(data: Dictionary) -> bool:
 		if not data[section_name] is Dictionary:
 			return false
 		restored_sections[section_name] = (data[section_name] as Dictionary).duplicate(true)
-	schema_version = restored_version
+	var restored_character_build: Dictionary = {}
+	if data.has("character_build_state"):
+		if not data["character_build_state"] is Dictionary:
+			return false
+		restored_character_build = (data["character_build_state"] as Dictionary).duplicate(true)
+	# Version one used the same top-level sections; normalization keeps future saves on v2.
+	schema_version = CURRENT_SCHEMA_VERSION
 	settlement_id = data["settlement_id"]
 	invalidated = data["invalidated"]
 	for section_name: StringName in REQUIRED_SECTION_NAMES:
 		set(String(section_name), restored_sections[section_name])
+	character_build_state = restored_character_build
 	return true
 
 
